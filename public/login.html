@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>Log In · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container">
+  <div class="form-wrap">
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Log in to manage your donor availability.</p>
+
+    <div class="alert alert-error" id="formAlert"></div>
+
+    <form id="loginForm">
+      <div class="form-row">
+        <label for="email">Email</label>
+        <input type="email" id="email" required placeholder="you@example.com" />
+      </div>
+      <div class="form-row">
+        <label for="password">Password</label>
+        <input type="password" id="password" required placeholder="Your password" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Log In</button>
+    </form>
+
+    <p class="form-footer-link">New? <a href="/register.html">Register here</a></p>
+  </div>
+</div>
+
+<footer>
+  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
+</footer>
+<script src="/js/app.js"></script>
+<script>
+  if (Auth.isLoggedIn()) window.location.replace('/index.html');
+  renderNavbar();
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert('formAlert');
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in...';
+
+    try {
+      const payload = {
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      };
+      const data = await api('/auth/login', { method: 'POST', body: payload });
+      Auth.setSession(data.token, data.donor);
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('next');
+      window.location.href = next && next.startsWith('/') ? next : '/index.html';
+    } catch (err) {
+      showAlert('formAlert', err.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Log In';
+    }
+  });
+</script>
+</body>
+</html>

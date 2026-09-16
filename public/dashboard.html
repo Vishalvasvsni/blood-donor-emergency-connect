@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>My Dashboard · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <div class="dash-header">
+    <div>
+      <h2 style="margin:0;">My Dashboard</h2>
+      <p style="color:var(--muted); margin:4px 0 0;">Manage your availability and profile.</p>
+    </div>
+  </div>
+
+  <div id="loader" class="loader">Loading your profile...</div>
+
+  <div class="dash-grid" id="dashContent" style="display:none;">
+    <!-- Left column -->
+    <div>
+      <div class="card" style="margin-bottom:20px; display:none;" id="becomeDonorCard">
+        <h3 style="margin-top:0;">Become a Donor</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-top:-6px;">You're currently registered as a search-only account. Add your blood group to start appearing in donor search results.</p>
+        <div class="alert alert-error" id="becomeDonorAlert"></div>
+        <div class="form-row">
+          <label for="becomeDonorGroup">Blood Group</label>
+          <select id="becomeDonorGroup">
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block btn-sm" id="becomeDonorBtn">Register as Donor</button>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;" id="availabilityCard">
+        <div class="availability-toggle">
+          <div>
+            <strong id="statusLabel">Available</strong>
+            <div style="font-size:0.8rem; color:var(--muted);">Toggle off after you donate</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="availabilityToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label for="lastDonation">Last Donation Date <span class="hint">(optional)</span></label>
+          <input type="date" id="lastDonation" />
+        </div>
+        <button class="btn btn-primary btn-block btn-sm" id="saveAvailabilityBtn">Save</button>
+        <div class="alert" id="availAlert" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Recent Contact Activity</h3>
+        <p style="font-size:0.82rem; color:var(--muted); margin-top:-6px;">People who viewed your contact details</p>
+        <div id="activityList"></div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="card">
+      <h3 style="margin-top:0;">Profile Details</h3>
+      <div class="alert alert-error" id="profileAlert"></div>
+      <div class="alert alert-success" id="profileSuccess"></div>
+
+      <form id="profileForm">
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" required />
+          </div>
+          <div class="form-row">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" required />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="blood_group">Blood Group</label>
+            <select id="blood_group" required>
+              <option value="">Not set</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option>
+              <option>O+</option><option>O-</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="gender">Gender</label>
+            <select id="gender">
+              <option value="">Prefer not to say</option>
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="city">City</label>
+            <input type="text" id="city" required />
+          </div>
+          <div class="form-row">
+            <label for="state">State</label>
+            <input type="text" id="state" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="age">Age</label>
+          <input type="number" id="age" min="18" max="65" />
+        </div>
+        <div class="form-row">
+          <button type="button" class="btn btn-secondary btn-sm" id="updateLocationBtn">📍 Update my location from browser</button>
+          <span id="locStatus" style="font-size:0.8rem; color:var(--muted); margin-left:8px;"></span>
+        </div>
+        <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
+      </form>
+
+      <hr style="margin:28px 0; border:none; border-top:1px solid var(--border);" />
+
+      <h3>Change Password</h3>
+      <div class="alert alert-error" id="pwAlert"></div>
+      <div class="alert alert-success" id="pwSuccess"></div>
+      <form id="pwForm">
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="current_password">Current Password</label>
+            <input type="password" id="current_password" required />
+          </div>
+          <div class="form-row">
+            <label for="new_password">New Password</label>
+            <input type="password" id="new_password" required minlength="6" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">Update Password</button>
+      </form>
+
+      <hr style="margin:28px 0; border:none; border-top:1px solid var(--border);" />
+      <button class="btn btn-sm" style="background:#fdeceb; color:#9c2020;" id="deleteAccountBtn">Delete My Account</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  guardAuth();
+  renderNavbar('dashboard');
+
+  let currentLat = null, currentLng = null;
+
+  function fillForm(donor) {
+    document.getElementById('name').value = donor.name;
+    document.getElementById('phone').value = donor.phone;
+    document.getElementById('blood_group').value = donor.blood_group || '';
+    document.getElementById('gender').value = donor.gender || '';
+    document.getElementById('city').value = donor.city;
+    document.getElementById('state').value = donor.state;
+    document.getElementById('age').value = donor.age || '';
+    document.getElementById('availabilityToggle').checked = !!donor.is_active;
+    document.getElementById('statusLabel').textContent = donor.is_active ? 'Available' : 'Not Available';
+    document.getElementById('lastDonation').value = donor.last_donation_date || '';
+    currentLat = donor.latitude;
+    currentLng = donor.longitude;
+
+    if (donor.role === 'seeker') {
+      document.getElementById('becomeDonorCard').style.display = 'block';
+      document.getElementById('availabilityCard').style.display = 'none';
+      document.getElementById('blood_group').required = false;
+    } else {
+      document.getElementById('becomeDonorCard').style.display = 'none';
+      document.getElementById('availabilityCard').style.display = 'block';
+      document.getElementById('blood_group').required = true;
+    }
+  }
+
+  async function loadProfile() {
+    try {
+      const { donor } = await api('/donors/me/profile', { auth: true });
+      Auth.updateDonor(donor);
+      fillForm(donor);
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('dashContent').style.display = 'grid';
+      loadActivity();
+    } catch (err) {
+      Auth.logout();
+    }
+  }
+
+  async function loadActivity() {
+    try {
+      const { logs } = await api('/donors/me/contact-activity', { auth: true });
+      const list = document.getElementById('activityList');
+      if (!logs.length) {
+        list.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">No one has viewed your contact yet.</p>';
+        return;
+      }
+      list.innerHTML = logs.map(l => `
+        <div class="log-item">
+          <strong>${l.requester_name || 'Anonymous'}</strong> viewed your contact<br/>
+          <span style="color:var(--muted);">${timeAgo(l.created_at)}${l.reason ? ' · ' + l.reason : ''}</span>
+        </div>
+      `).join('');
+    } catch (err) { /* non-critical */ }
+  }
+
+  document.getElementById('becomeDonorBtn').addEventListener('click', async () => {
+    hideAlert('becomeDonorAlert');
+    const bg = document.getElementById('becomeDonorGroup').value;
+    if (!bg) return showAlert('becomeDonorAlert', 'Please select your blood group.');
+    try {
+      const { donor } = await api('/donors/me/become-donor', {
+        method: 'PATCH',
+        auth: true,
+        body: { blood_group: bg },
+      });
+      Auth.updateDonor(donor);
+      fillForm(donor);
+    } catch (err) {
+      showAlert('becomeDonorAlert', err.message);
+    }
+  });
+
+  document.getElementById('availabilityToggle').addEventListener('change', (e) => {
+    document.getElementById('statusLabel').textContent = e.target.checked ? 'Available' : 'Not Available';
+  });
+
+  document.getElementById('saveAvailabilityBtn').addEventListener('click', async () => {
+    hideAlert('availAlert');
+    try {
+      const { donor } = await api('/donors/me/availability', {
+        method: 'PATCH',
+        auth: true,
+        body: {
+          is_active: document.getElementById('availabilityToggle').checked,
+          last_donation_date: document.getElementById('lastDonation').value || null,
+        },
+      });
+      Auth.updateDonor(donor);
+      showAlert('availAlert', 'Availability updated!', 'success');
+    } catch (err) {
+      showAlert('availAlert', err.message, 'error');
+    }
+  });
+
+  document.getElementById('updateLocationBtn').addEventListener('click', async () => {
+    document.getElementById('locStatus').textContent = 'Fetching location...';
+    const coords = await getBrowserLocation();
+    if (coords) {
+      currentLat = coords.lat; currentLng = coords.lng;
+      document.getElementById('locStatus').textContent = '✓ Location updated (will be saved with profile)';
+    } else {
+      document.getElementById('locStatus').textContent = 'Could not get location. Check browser permissions.';
+    }
+  });
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert('profileAlert'); hideAlert('profileSuccess');
+    try {
+      const { donor } = await api('/donors/me/profile', {
+        method: 'PATCH',
+        auth: true,
+        body: {
+          name: document.getElementById('name').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          blood_group: document.getElementById('blood_group').value,
+          gender: document.getElementById('gender').value || null,
+          city: document.getElementById('city').value.trim(),
+          state: document.getElementById('state').value.trim(),
+          age: document.getElementById('age').value || null,
+          latitude: currentLat,
+          longitude: currentLng,
+        },
+      });
+      Auth.updateDonor(donor);
+      showAlert('profileSuccess', 'Profile updated successfully!', 'success');
+    } catch (err) {
+      showAlert('profileAlert', err.message, 'error');
+    }
+  });
+
+  document.getElementById('pwForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert('pwAlert'); hideAlert('pwSuccess');
+    try {
+      await api('/donors/me/password', {
+        method: 'PATCH',
+        auth: true,
+        body: {
+          current_password: document.getElementById('current_password').value,
+          new_password: document.getElementById('new_password').value,
+        },
+      });
+      showAlert('pwSuccess', 'Password updated!', 'success');
+      document.getElementById('pwForm').reset();
+    } catch (err) {
+      showAlert('pwAlert', err.message, 'error');
+    }
+  });
+
+  document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to permanently delete your donor account?')) return;
+    try {
+      await api('/donors/me', { method: 'DELETE', auth: true });
+      Auth.logout();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  loadProfile();
+</script>
+</body>
+</html>

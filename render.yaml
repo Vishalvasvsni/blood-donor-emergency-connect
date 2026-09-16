@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: blood-donor-emergency-connect
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_PATH
+        value: /var/data/blood_donor.db
+      - key: NODE_VERSION
+        value: 20.0.0
+    disk:
+      name: blood-donor-data
+      mountPath: /var/data
+      sizeGB: 1

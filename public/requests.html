@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>Emergency Requests · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <div class="dash-header">
+    <div>
+      <h2 style="margin:0;">Emergency Requests</h2>
+      <p style="color:var(--muted); margin:4px 0 0;">Broadcast an urgent need or browse open requests.</p>
+    </div>
+    <button class="btn btn-primary" id="newRequestBtn">+ Post Emergency Request</button>
+  </div>
+
+  <!-- New Request Form (hidden by default) -->
+  <div class="card" id="requestFormCard" style="display:none; margin-bottom:28px;">
+    <h3 style="margin-top:0;">Post an Emergency Request</h3>
+    <div class="alert alert-error" id="reqFormAlert"></div>
+    <form id="requestForm">
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="patient_name">Patient Name</label>
+          <input type="text" id="patient_name" required />
+        </div>
+        <div class="form-row">
+          <label for="blood_group">Blood Group Needed</label>
+          <select id="blood_group" required>
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="units_needed">Units Needed</label>
+          <input type="number" id="units_needed" min="1" value="1" />
+        </div>
+        <div class="form-row">
+          <label for="urgency">Urgency</label>
+          <select id="urgency">
+            <option value="critical">Critical (within hours)</option>
+            <option value="high" selected>High (within a day)</option>
+            <option value="medium">Medium (within a few days)</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="hospital_name">Hospital / Blood Bank Name</label>
+        <input type="text" id="hospital_name" required />
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="city">City</label>
+          <input type="text" id="city" required />
+        </div>
+        <div class="form-row">
+          <label for="state">State</label>
+          <input type="text" id="state" required />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="contact_name">Your Name (Contact Person)</label>
+          <input type="text" id="contact_name" required />
+        </div>
+        <div class="form-row">
+          <label for="contact_phone">Contact Phone</label>
+          <input type="tel" id="contact_phone" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="message">Additional Message <span class="hint">(optional)</span></label>
+        <textarea id="message" rows="3" placeholder="Any extra details for donors..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" id="submitReqBtn">Post Request</button>
+      <button type="button" class="btn btn-secondary" id="cancelReqBtn">Cancel</button>
+    </form>
+  </div>
+
+  <div id="matchResult"></div>
+
+  <!-- Filters -->
+  <div class="search-bar">
+    <div class="search-controls">
+      <div class="form-row">
+        <label for="filterGroup">Filter by Blood Group</label>
+        <select id="filterGroup">
+          <option value="">All</option>
+          <option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option>
+          <option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="filterCity">Filter by City</label>
+        <input type="text" id="filterCity" placeholder="e.g. Jodhpur" />
+      </div>
+      <div class="form-row">
+        <label for="filterStatus">Status</label>
+        <select id="filterStatus">
+          <option value="open" selected>Open</option>
+          <option value="fulfilled">Fulfilled</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label style="visibility:hidden;">.</label>
+        <button class="btn btn-primary" id="filterBtn" type="button">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="requestsList"></div>
+</div>
+
+<footer>
+  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  guardAuth();
+  renderNavbar('requests');
+
+  // Prefill contact details from the logged-in account
+  (function prefillContact() {
+    const donor = Auth.getDonor();
+    if (donor) {
+      document.getElementById('contact_name').value = donor.name || '';
+      document.getElementById('contact_phone').value = donor.phone || '';
+      if (donor.city) document.getElementById('city').value = donor.city;
+      if (donor.state) document.getElementById('state').value = donor.state;
+    }
+  })();
+
+  document.getElementById('newRequestBtn').addEventListener('click', () => {
+    document.getElementById('requestFormCard').style.display = 'block';
+    document.getElementById('requestFormCard').scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('cancelReqBtn').addEventListener('click', () => {
+    document.getElementById('requestFormCard').style.display = 'none';
+  });
+
+  document.getElementById('requestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert('reqFormAlert');
+    const btn = document.getElementById('submitReqBtn');
+    btn.disabled = true; btn.textContent = 'Posting...';
+
+    const coords = await getBrowserLocation();
+
+    try {
+      const payload = {
+        patient_name: document.getElementById('patient_name').value.trim(),
+        blood_group: document.getElementById('blood_group').value,
+        units_needed: parseInt(document.getElementById('units_needed').value) || 1,
+        urgency: document.getElementById('urgency').value,
+        hospital_name: document.getElementById('hospital_name').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        state: document.getElementById('state').value.trim(),
+        contact_name: document.getElementById('contact_name').value.trim(),
+        contact_phone: document.getElementById('contact_phone').value.trim(),
+        message: document.getElementById('message').value.trim() || null,
+        latitude: coords ? coords.lat : null,
+        longitude: coords ? coords.lng : null,
+      };
+      const data = await api('/requests', { method: 'POST', auth: true, body: payload });
+
+      document.getElementById('requestFormCard').style.display = 'none';
+      document.getElementById('requestForm').reset();
+
+      const matchDiv = document.getElementById('matchResult');
+      matchDiv.innerHTML = `
+        <div class="alert alert-success show" style="margin-bottom:20px;">
+          ✅ Request posted! Found <strong>${data.matchingDonorsCount}</strong> compatible available donor(s)${data.topMatches.length ? ' nearby, including:' : '.'}
+          ${data.topMatches.length ? '<ul style="margin:8px 0 0 18px;">' + data.topMatches.map(m => `<li>${m.name} (${m.blood_group}) — ${m.city}${m.distance_km !== null ? ', ' + m.distance_km + ' km away' : ''}</li>`).join('') + '</ul>' : ''}
+        </div>`;
+
+      loadRequests();
+    } catch (err) {
+      showAlert('reqFormAlert', err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Post Request';
+    }
+  });
+
+  function urgencyBadge(u) {
+    return `<span class="badge badge-urgency-${u}">${u.toUpperCase()}</span>`;
+  }
+  function statusBadge(s) {
+    return `<span class="badge badge-status-${s}">${s.toUpperCase()}</span>`;
+  }
+
+  function renderRequestCard(r) {
+    return `
+      <div class="request-card status-${r.status}">
+        <div class="request-top">
+          <div>
+            <p class="request-title">${r.units_needed} unit(s) of ${r.blood_group} needed for ${r.patient_name}</p>
+            <div class="request-meta">🏥 ${r.hospital_name} · 📍 ${r.city}, ${r.state} · 🕒 ${timeAgo(r.created_at)}</div>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${urgencyBadge(r.urgency)} ${statusBadge(r.status)}
+          </div>
+        </div>
+        ${r.message ? `<p class="request-msg">"${escapeHtml(r.message)}"</p>` : ''}
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:0.9rem;">📞 Contact: <strong>${r.contact_name}</strong> — ${r.contact_phone}</span>
+          ${r.status === 'open' ? `<button class="btn btn-secondary btn-sm mark-fulfilled" data-id="${r.id}">Mark as Fulfilled</button>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function loadRequests() {
+    const list = document.getElementById('requestsList');
+    list.innerHTML = '<div class="loader">Loading requests...</div>';
+
+    const params = new URLSearchParams();
+    const status = document.getElementById('filterStatus').value;
+    const bg = document.getElementById('filterGroup').value;
+    const city = document.getElementById('filterCity').value.trim();
+    params.set('status', status);
+    if (bg) params.set('blood_group', bg);
+    if (city) params.set('city', city);
+
+    try {
+      const data = await api(`/requests?${params.toString()}`, { auth: true });
+      if (!data.count) {
+        list.innerHTML = `<div class="empty-state"><div class="big-icon">🩸</div>No requests match this filter right now.</div>`;
+        return;
+      }
+      list.innerHTML = data.requests.map(renderRequestCard).join('');
+      document.querySelectorAll('.mark-fulfilled').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          try {
+            await api(`/requests/${btn.dataset.id}/status`, { method: 'PATCH', auth: true, body: { status: 'fulfilled' } });
+            loadRequests();
+          } catch (err) { alert(err.message); }
+        });
+      });
+    } catch (err) {
+      list.innerHTML = `<div class="empty-state">Something went wrong: ${err.message}</div>`;
+    }
+  }
+
+  document.getElementById('filterBtn').addEventListener('click', loadRequests);
+  loadRequests();
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>Find Donors · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <h2 style="margin-bottom:4px;">Find a Blood Donor</h2>
+  <p style="color:var(--muted); margin-top:0;">Search by blood group and city. Results are ranked by exact match and distance.</p>
+
+  <div class="search-bar">
+    <div class="search-controls">
+      <div class="form-row">
+        <label for="bloodGroupFilter">Blood Group Needed</label>
+        <select id="bloodGroupFilter">
+          <option value="">Any</option>
+          <option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option>
+          <option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="cityFilter">City / State</label>
+        <input type="text" id="cityFilter" placeholder="e.g. Jodhpur" />
+      </div>
+      <div class="form-row">
+        <label style="visibility:hidden;">.</label>
+        <button class="btn btn-secondary btn-sm" id="useLocationBtn" type="button">📍 Near me</button>
+      </div>
+      <div class="form-row">
+        <label style="visibility:hidden;">.</label>
+        <button class="btn btn-primary" id="searchBtn" type="button">Search</button>
+      </div>
+    </div>
+    <label style="display:flex; align-items:center; gap:6px; margin-top:14px; font-size:0.85rem; color:var(--muted);">
+      <input type="checkbox" id="exactOnly" style="width:auto;" />
+      Show exact blood group match only (otherwise compatible donors are also shown)
+    </label>
+    <div id="locStatus" style="font-size:0.8rem; color:var(--muted); margin-top:6px;"></div>
+  </div>
+
+  <div id="resultsMeta" style="margin-bottom:14px; color:var(--muted); font-size:0.9rem;"></div>
+  <div id="results" class="donor-list"></div>
+</div>
+
+<footer>
+  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  guardAuth();
+  renderNavbar('search');
+
+  let userCoords = null;
+
+  document.getElementById('useLocationBtn').addEventListener('click', async () => {
+    document.getElementById('locStatus').textContent = 'Fetching your location...';
+    userCoords = await getBrowserLocation();
+    document.getElementById('locStatus').textContent = userCoords
+      ? '✓ Using your current location to rank by distance.'
+      : 'Could not access location — check browser permissions.';
+    runSearch();
+  });
+
+  function bloodBadge(group, exact) {
+    return `<span class="badge badge-blood">${group}</span>${exact === false ? '<span class="badge badge-exact" style="margin-left:4px;">Compatible</span>' : ''}`;
+  }
+
+  function renderDonorCard(d) {
+    return `
+      <div class="donor-card" data-id="${d.id}">
+        <div class="donor-main">
+          <div class="donor-avatar">${initials(d.name)}</div>
+          <div class="donor-info">
+            <h4>${d.name}</h4>
+            <div class="donor-meta">
+              ${bloodBadge(d.blood_group, d.exact_match)}
+              <span>📍 ${d.city}, ${d.state}</span>
+              ${d.distance_km !== null ? `<span>· ${d.distance_km} km away</span>` : ''}
+              <span class="badge badge-active">Available</span>
+            </div>
+          </div>
+        </div>
+        <div class="donor-actions">
+          <button class="btn btn-primary btn-sm reveal-btn" data-id="${d.id}">Reveal Contact</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function runSearch() {
+    const results = document.getElementById('results');
+    const meta = document.getElementById('resultsMeta');
+    results.innerHTML = '<div class="loader">Searching...</div>';
+    meta.textContent = '';
+
+    const params = new URLSearchParams();
+    const bg = document.getElementById('bloodGroupFilter').value;
+    const city = document.getElementById('cityFilter').value.trim();
+    if (bg) params.set('blood_group', bg);
+    if (city) params.set('city', city);
+    if (document.getElementById('exactOnly').checked) params.set('exact_match_only', 'true');
+    if (userCoords) { params.set('lat', userCoords.lat); params.set('lng', userCoords.lng); }
+
+    try {
+      const data = await api(`/donors/search?${params.toString()}`, { auth: true });
+      meta.textContent = `${data.count} donor${data.count === 1 ? '' : 's'} found`;
+      if (!data.count) {
+        results.innerHTML = `<div class="empty-state"><div class="big-icon">🔍</div>No matching donors found right now.<br/>Try widening your search or check the emergency requests board.</div>`;
+        return;
+      }
+      results.innerHTML = data.donors.map(renderDonorCard).join('');
+      document.querySelectorAll('.reveal-btn').forEach((btn) => {
+        btn.addEventListener('click', () => revealContact(btn));
+      });
+    } catch (err) {
+      results.innerHTML = `<div class="empty-state">Something went wrong: ${err.message}</div>`;
+    }
+  }
+
+  async function revealContact(btn) {
+    const id = btn.getAttribute('data-id');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const donor = await api(`/donors/${id}/reveal-contact`, {
+        method: 'POST',
+        auth: true,
+        body: { reason: 'Searched via Find Donors page' },
+      });
+      btn.outerHTML = `<span class="contact-reveal">📞 ${donor.phone}</span>`;
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Reveal Contact';
+      alert(err.message);
+    }
+  }
+
+  document.getElementById('searchBtn').addEventListener('click', runSearch);
+  document.getElementById('cityFilter').addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+
+  runSearch();
+</script>
+</body>
+</html>

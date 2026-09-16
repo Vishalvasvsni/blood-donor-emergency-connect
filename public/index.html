@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<section class="hero">
+  <div class="container">
+    <h1>Find a Blood Donor. Instantly.</h1>
+    <p>A real-time, location-aware platform connecting voluntary blood donors with patients, hospitals, and NGOs. Create a free account — as a donor or just to search — to get started.</p>
+    <div class="hero-buttons" id="heroButtons">
+      <a href="/register.html" class="btn btn-white">Create Free Account</a>
+      <a href="/login.html" class="btn btn-outline-white">Log In</a>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="stats-strip" id="statsStrip">
+    <div class="stat-card"><div class="num">—</div><div class="label">Registered Donors</div></div>
+    <div class="stat-card"><div class="num">—</div><div class="label">Currently Available</div></div>
+    <div class="stat-card"><div class="num">—</div><div class="label">Requests Fulfilled</div></div>
+    <div class="stat-card"><div class="num">—</div><div class="label">Open Requests</div></div>
+  </div>
+</div>
+
+<section>
+  <div class="container">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Three simple steps — no technical expertise required.</p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon-badge">📝</div>
+        <h3>1. Register once</h3>
+        <p>Donors sign up with their blood group, phone number, and location. It takes under two minutes.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge">🔍</div>
+        <h3>2. Search in real time</h3>
+        <p>Patients, hospitals, or NGOs search by blood group and city to find nearby, currently-available donors.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge">📞</div>
+        <h3>3. Connect directly</h3>
+        <p>Contact details are revealed with consent, so requesters can call the donor directly — no middleman, no delay.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--white); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+  <div class="container">
+    <h2 class="section-title">Why This Platform</h2>
+    <p class="section-sub">Built to close the gaps in existing, fragmented donor directories.</p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon-badge">⚡</div>
+        <h3>Real-time availability</h3>
+        <p>Donors toggle their status active/inactive after donating, so search results are always current.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge">📍</div>
+        <h3>Proximity-aware</h3>
+        <p>Uses live location to rank donors by distance, not just by city name.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge">🌐</div>
+        <h3>Built for smaller cities</h3>
+        <p>Lightweight and simple — designed for towns underserved by metro-focused apps.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container" style="text-align:center;">
+    <h2 class="section-title">Need Blood Urgently?</h2>
+    <p class="section-sub">Post an emergency request and we'll show it to compatible donors nearby.</p>
+    <a href="/requests.html" class="btn btn-primary">Post / View Emergency Requests</a>
+  </div>
+</section>
+
+<footer>
+  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  renderNavbar('home');
+  applyHeroState();
+
+  (async () => {
+    try {
+      const stats = await api('/donors/stats');
+      const cards = document.querySelectorAll('#statsStrip .stat-card .num');
+      cards[0].textContent = stats.totalDonors;
+      cards[1].textContent = stats.activeDonors;
+      cards[2].textContent = stats.totalRequests - stats.openRequests;
+      cards[3].textContent = stats.openRequests;
+    } catch (e) { /* silent fail on homepage */ }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>Register as a Donor · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container">
+  <div class="form-wrap wide">
+    <h2>Register as a Blood Donor</h2>
+    <p class="subtitle">Takes under two minutes. You can update your availability anytime.</p>
+
+    <div class="alert alert-error" id="formAlert"></div>
+
+    <form id="registerForm">
+      <div class="form-row">
+        <label>I want to:</label>
+        <div style="display:flex; gap:10px; margin-top:6px;">
+          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; cursor:pointer;">
+            <input type="radio" name="role" value="donor" checked style="width:auto;" />
+            🩸 Register as a Blood Donor
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; cursor:pointer;">
+            <input type="radio" name="role" value="seeker" style="width:auto;" />
+            🔍 Just search / post requests
+          </label>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" required placeholder="e.g. Vishal Vaswani" />
+        </div>
+        <div class="form-row">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="you@example.com" />
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" required placeholder="+91 98765 43210" />
+        </div>
+        <div class="form-row" id="bloodGroupRow">
+          <label for="blood_group">Blood Group</label>
+          <select id="blood_group" required>
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="city">City</label>
+          <input type="text" id="city" required placeholder="e.g. Jodhpur" />
+        </div>
+        <div class="form-row">
+          <label for="state">State</label>
+          <input type="text" id="state" required placeholder="e.g. Rajasthan" />
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="age">Age <span class="hint">(optional)</span></label>
+          <input type="number" id="age" min="18" max="65" placeholder="18–65" />
+        </div>
+        <div class="form-row">
+          <label for="gender">Gender <span class="hint">(optional)</span></label>
+          <select id="gender">
+            <option value="">Prefer not to say</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>
+          <input type="checkbox" id="shareLocation" checked style="width:auto; margin-right:6px;" />
+          Share my precise location for better proximity search <span class="hint">(recommended)</span>
+        </label>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="password">Password</label>
+          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" />
+        </div>
+        <div class="form-row">
+          <label for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" required minlength="6" placeholder="Re-enter password" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Register as Donor</button>
+    </form>
+
+    <p class="form-footer-link">Already registered? <a href="/login.html">Log in</a></p>
+  </div>
+</div>
+
+<footer>
+  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  // If already logged in, no need to register again
+  if (Auth.isLoggedIn()) window.location.replace('/index.html');
+  renderNavbar();
+
+  const form = document.getElementById('registerForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const bloodGroupRow = document.getElementById('bloodGroupRow');
+  const bloodGroupSelect = document.getElementById('blood_group');
+
+  function updateRoleUI() {
+    const role = document.querySelector('input[name="role"]:checked').value;
+    if (role === 'seeker') {
+      bloodGroupRow.style.opacity = '0.6';
+      bloodGroupSelect.required = false;
+    } else {
+      bloodGroupRow.style.opacity = '1';
+      bloodGroupSelect.required = true;
+    }
+  }
+  document.querySelectorAll('input[name="role"]').forEach((r) => r.addEventListener('change', updateRoleUI));
+  updateRoleUI();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert('formAlert');
+
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+    if (password !== confirm) {
+      return showAlert('formAlert', 'Passwords do not match.');
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Registering...';
+
+    let coords = null;
+    if (document.getElementById('shareLocation').checked) {
+      coords = await getBrowserLocation();
+    }
+
+    try {
+      const role = document.querySelector('input[name="role"]:checked').value;
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password,
+        phone: document.getElementById('phone').value.trim(),
+        role,
+        blood_group: document.getElementById('blood_group').value || null,
+        city: document.getElementById('city').value.trim(),
+        state: document.getElementById('state').value.trim(),
+        age: document.getElementById('age').value || null,
+        gender: document.getElementById('gender').value || null,
+        latitude: coords ? coords.lat : null,
+        longitude: coords ? coords.lng : null,
+      };
+
+      const data = await api('/auth/register', { method: 'POST', body: payload });
+      Auth.setSession(data.token, data.donor);
+      window.location.href = '/index.html';
+    } catch (err) {
+      showAlert('formAlert', err.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Register as Donor';
+    }
+  });
+</script>
+</body>
+</html>
