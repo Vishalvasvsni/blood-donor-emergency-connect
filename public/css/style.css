@@ -306,6 +306,7 @@ footer {
   .dash-grid { grid-template-columns: 1fr; }
   .stats-strip { grid-template-columns: repeat(2, 1fr); }
   .search-controls { grid-template-columns: 1fr; }
+  .form-row input { box-sizing: border-box; }
 }
 @media (max-width: 640px) {
   .hero h1 { font-size: 1.8rem; }
@@ -315,4 +316,5 @@ footer {
   .hamburger { display: block; }
   .donor-card { flex-direction: column; align-items: flex-start; }
   .donor-actions { width: 100%; justify-content: flex-start; }
+  .form-row input { box-sizing: border-box; }
 }
