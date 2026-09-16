@@ -177,7 +177,11 @@ section { padding: 56px 0; }
   color: var(--ink);
 }
 .form-row input[type="date"] {
-  min-height: 44px; /* comfortable touch target, avoids layout jump on iOS */
+  height: 44px;
+  line-height: 20px;
+  padding: 11px 12px; /* match other inputs exactly */
+  -webkit-appearance: none;
+  appearance: none;
 }
 .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
   outline: none;
