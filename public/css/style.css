@@ -171,10 +171,13 @@ section { padding: 56px 0; }
   padding: 11px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 16px; /* must be >=16px or iOS Safari auto-zooms the page on focus */
   font-family: inherit;
   background: var(--white);
   color: var(--ink);
+}
+.form-row input[type="date"] {
+  min-height: 44px; /* comfortable touch target, avoids layout jump on iOS */
 }
 .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
   outline: none;
@@ -306,7 +309,6 @@ footer {
   .dash-grid { grid-template-columns: 1fr; }
   .stats-strip { grid-template-columns: repeat(2, 1fr); }
   .search-controls { grid-template-columns: 1fr; }
-  .form-row input { box-sizing: border-box; }
 }
 @media (max-width: 640px) {
   .hero h1 { font-size: 1.8rem; }
@@ -316,5 +318,4 @@ footer {
   .hamburger { display: block; }
   .donor-card { flex-direction: column; align-items: flex-start; }
   .donor-actions { width: 100%; justify-content: flex-start; }
-  .form-row input { box-sizing: border-box; }
 }
