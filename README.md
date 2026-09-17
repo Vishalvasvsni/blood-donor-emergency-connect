@@ -61,6 +61,11 @@ Additional features beyond the minimum scope:
   number is only revealed on request, and every reveal is logged so the
   donor can see who viewed their contact (addresses the "privacy-respecting"
   novelty claim in the synopsis).
+- **Admin panel for the platform owner** — set `ADMIN_EMAIL` to your
+  registered email and you get a hidden `/admin.html` page listing every
+  registered user (ID, name, email, phone, role, blood group, city, join
+  date), plus platform-wide summary stats and the ability to remove a user.
+  See "Admin Access" below.
 - **Platform stats** on the homepage (total donors, active donors, requests
   fulfilled) for a quick health-of-system view during evaluation/demo.
 
@@ -136,6 +141,35 @@ curl http://localhost:3000/api/health
 
 ---
 
+## 5.5 Admin Access
+
+As the platform owner, you can see every registered user (ID, name, email,
+phone, role, blood group, city, join date) on a dedicated admin panel:
+
+1. **Register a normal account first** (donor or seeker — either works),
+   using the email you want to use as the admin login.
+2. **Set the `ADMIN_EMAIL` environment variable** to that same email:
+   - Locally: add `ADMIN_EMAIL=you@example.com` to your `.env` file.
+   - On Render: Dashboard → your service → Environment → add
+     `ADMIN_EMAIL` = `you@example.com` → Save (this triggers a restart).
+3. **Restart the server** (locally: stop and re-run `npm start`; on Render
+   this happens automatically after saving the env var). On startup, the
+   app automatically promotes that account to admin — no manual database
+   editing required.
+4. **Log in with that account** and you'll now see a **👑 Admin** link in
+   the navbar, leading to `/admin.html`, where you can:
+   - See every user's ID, name, email, phone, role, blood group, city, and
+     join date, with search/filter by name, email, or role
+   - See summary counts (total users, donors, seekers, active donors)
+   - Delete a user if needed (moderation)
+
+You can promote a different email later by changing `ADMIN_EMAIL` and
+restarting — the previous admin flag isn't automatically removed from the
+old account, so revoke it manually via the admin panel's delete button if
+you need to fully replace ownership.
+
+---
+
 ## 6. API Reference (for evaluators / viva)
 
 | Method | Endpoint                              | Auth | Description |
@@ -156,6 +190,10 @@ curl http://localhost:3000/api/health
 | POST   | `/api/requests`                          | JWT  | Post an emergency request |
 | GET    | `/api/requests`                          | JWT  | List/filter emergency requests |
 | PATCH  | `/api/requests/:id/status`                | JWT  | Mark fulfilled/expired |
+| GET    | `/api/admin/users`                       | Admin| List every registered user |
+| GET    | `/api/admin/summary`                     | Admin| Platform-wide counts |
+| GET    | `/api/admin/requests`                    | Admin| Every emergency request ever posted |
+| DELETE | `/api/admin/users/:id`                   | Admin| Remove a user |
 
 ---
 
@@ -164,20 +202,55 @@ curl http://localhost:3000/api/health
 Because this is plain Node.js + a file-based SQLite database, it deploys
 cleanly to any Node host:
 
-- **Render** — New Web Service → connect repo → Build: `npm install` →
-  Start: `npm start`. Add a persistent disk mounted at `/database` if you
-  want donor data to survive redeploys (otherwise SQLite resets on redeploy,
-  which is fine for an academic demo).
-- **Railway** — same idea; Railway volumes work well for the SQLite file.
+- **Render (free tier)** — New → Blueprint → connect repo. Render reads
+  `render.yaml` and auto-configures the build/start commands and a random
+  `JWT_SECRET`. **Note:** Render's free tier does not support persistent
+  disks, so the SQLite file lives in the app's normal filesystem and will
+  reset whenever you push new code or the service restarts (data survives
+  normal usage in between — it's only redeploys/restarts that reset it).
+  This is fine for coursework demos/viva. If you need donor data to survive
+  every redeploy, upgrade that one service to Render's **Starter plan**
+  (~$7/month), which unlocks persistent disks — then add a `disk:` block
+  back to `render.yaml` (see the commented example below) and set `DB_PATH`
+  to a path under that disk.
+- **Railway** — similar flow, and its free trial credit includes **volumes**
+  (their equivalent of a persistent disk) even before you add a card, so it
+  can be a better free option if data persistence across redeploys matters
+  to you for the demo.
 - **Vercel/Netlify** are better suited to the static frontend only — for the
   full app (with the Express API), Render/Railway/Fly.io are simpler.
 
 Before deploying:
 1. Set a strong, random `JWT_SECRET` in the platform's environment
-   variables (never commit `.env`).
-2. If you need the data to survive restarts on a serverless/ephemeral
-   filesystem, either use a mounted volume, or swap `config/db.js` for a
-   hosted database (see below).
+   variables (the Render blueprint generates this for you automatically —
+   never commit `.env`).
+2. If you're on a plan with a persistent disk, set `DB_PATH` to point inside
+   it (e.g. `/var/data/blood_donor.db`) so the database survives redeploys.
+
+<details>
+<summary>Optional: render.yaml with a persistent disk (paid plans only)</summary>
+
+```yaml
+services:
+  - type: web
+    name: blood-donor-emergency-connect
+    runtime: node
+    plan: starter   # disks require a paid plan
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_PATH
+        value: /var/data/blood_donor.db
+      - key: NODE_VERSION
+        value: 20.0.0
+    disk:
+      name: blood-donor-data
+      mountPath: /var/data
+      sizeGB: 1
+```
+</details>
 
 ### Migrating to Firebase or MongoDB (optional, per synopsis §6 alternatives)
 All database access is isolated to `config/db.js` and the route files. To

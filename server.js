@@ -8,6 +8,7 @@ require('./config/db'); // initializes schema on startup
 const authRoutes = require('./routes/auth');
 const donorRoutes = require('./routes/donors');
 const requestRoutes = require('./routes/requests');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/donors', donorRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'Blood Donor Emergency Connect' }));
 

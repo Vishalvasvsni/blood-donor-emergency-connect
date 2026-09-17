@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div id="navbar"></div>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <h2 style="margin-bottom:4px;">Admin Panel</h2>
+  <p style="color:var(--muted); margin-top:0;">Everyone who has registered on the platform.</p>
+
+  <div class="stats-strip" id="summaryStrip" style="margin-top:0; margin-bottom:28px;">
+    <div class="stat-card"><div class="num" id="sTotalUsers">—</div><div class="label">Total Users</div></div>
+    <div class="stat-card"><div class="num" id="sTotalDonors">—</div><div class="label">Donors</div></div>
+    <div class="stat-card"><div class="num" id="sActiveDonors">—</div><div class="label">Active Donors</div></div>
+    <div class="stat-card"><div class="num" id="sTotalSeekers">—</div><div class="label">Seekers</div></div>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-controls">
+      <div class="form-row">
+        <label for="roleFilter">Filter by Role</label>
+        <select id="roleFilter">
+          <option value="">All</option>
+          <option value="donor">Donors</option>
+          <option value="seeker">Seekers</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="searchBox">Search Name / Email</label>
+        <input type="text" id="searchBox" placeholder="e.g. Vishal or vishal@example.com" />
+      </div>
+      <div class="form-row">
+        <label style="visibility:hidden;">.</label>
+        <button class="btn btn-primary" id="refreshBtn" type="button">Refresh</button>
+      </div>
+      <div class="form-row"></div>
+    </div>
+  </div>
+
+  <div id="usersTableWrap" style="overflow-x:auto;">
+    <div class="loader">Loading users...</div>
+  </div>
+</div>
+
+<footer>Blood Donor Emergency Connect &middot; Admin Panel</footer>
+
+<script src="/js/app.js"></script>
+<script>
+  guardAuth();
+  renderNavbar('dashboard');
+
+  const donor = Auth.getDonor();
+  if (!donor || !donor.is_admin) {
+    document.querySelector('.container').innerHTML = `
+      <div class="empty-state" style="margin-top:60px;">
+        <div class="big-icon">🔒</div>
+        This page is only available to the platform owner/admin.
+      </div>`;
+    throw new Error('Not admin');
+  }
+
+  let allUsers = [];
+
+  async function loadSummary() {
+    try {
+      const s = await api('/admin/summary', { auth: true });
+      document.getElementById('sTotalUsers').textContent = s.totalUsers;
+      document.getElementById('sTotalDonors').textContent = s.totalDonors;
+      document.getElementById('sActiveDonors').textContent = s.activeDonors;
+      document.getElementById('sTotalSeekers').textContent = s.totalSeekers;
+    } catch (e) { /* non-critical */ }
+  }
+
+  function renderTable(users) {
+    const wrap = document.getElementById('usersTableWrap');
+    if (!users.length) {
+      wrap.innerHTML = `<div class="empty-state">No users match this filter.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; background:var(--white); border-radius:12px; overflow:hidden; box-shadow:var(--shadow);">
+        <thead>
+          <tr style="background:var(--red-light); text-align:left;">
+            <th style="padding:10px 12px; font-size:0.8rem;">ID</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Name</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Email</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Phone</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Role</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Blood Group</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">City</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Status</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Joined</th>
+            <th style="padding:10px 12px; font-size:0.8rem;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${users.map(u => `
+            <tr style="border-top:1px solid var(--border);">
+              <td style="padding:10px 12px; font-size:0.85rem;">#${u.id}</td>
+              <td style="padding:10px 12px; font-size:0.85rem; font-weight:600;">${u.name}${u.is_admin ? ' 👑' : ''}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.email}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.phone}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.role}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.blood_group || '—'}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.city}, ${u.state}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.role === 'donor' ? (u.is_active ? '<span class="badge badge-active">Available</span>' : '<span class="badge badge-inactive">Inactive</span>') : '—'}</td>
+              <td style="padding:10px 12px; font-size:0.8rem; color:var(--muted);">${u.created_at}</td>
+              <td style="padding:10px 12px;">
+                ${u.is_admin ? '' : `<button class="btn btn-sm" style="background:#fdeceb; color:#9c2020;" data-id="${u.id}" data-name="${u.name}">Delete</button>`}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    wrap.querySelectorAll('button[data-id]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Delete user "${btn.dataset.name}"? This cannot be undone.`)) return;
+        try {
+          await api(`/admin/users/${btn.dataset.id}`, { method: 'DELETE', auth: true });
+          loadUsers();
+          loadSummary();
+        } catch (err) { alert(err.message); }
+      });
+    });
+  }
+
+  function applyFilters() {
+    const role = document.getElementById('roleFilter').value;
+    const q = document.getElementById('searchBox').value.toLowerCase().trim();
+    let filtered = allUsers;
+    if (role) filtered = filtered.filter((u) => u.role === role);
+    if (q) filtered = filtered.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    renderTable(filtered);
+  }
+
+  async function loadUsers() {
+    document.getElementById('usersTableWrap').innerHTML = '<div class="loader">Loading users...</div>';
+    try {
+      const data = await api('/admin/users', { auth: true });
+      allUsers = data.users;
+      applyFilters();
+    } catch (err) {
+      document.getElementById('usersTableWrap').innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', () => { loadUsers(); loadSummary(); });
+  document.getElementById('roleFilter').addEventListener('change', applyFilters);
+  document.getElementById('searchBox').addEventListener('input', applyFilters);
+
+  loadSummary();
+  loadUsers();
+</script>
+</body>
+</html>

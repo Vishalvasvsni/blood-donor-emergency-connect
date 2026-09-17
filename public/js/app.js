@@ -78,6 +78,9 @@ function renderNavbar(activePage = '') {
     linkHtml = links
       .map((l) => `<a href="${l.href}" class="${activePage === l.key ? 'active' : ''}">${l.label}</a>`)
       .join('');
+    if (donor && donor.is_admin) {
+      linkHtml += `<a href="/admin.html" class="${activePage === 'admin' ? 'active' : ''}">👑 Admin</a>`;
+    }
     rightHtml = `<a href="/dashboard.html" class="${activePage === 'dashboard' ? 'active' : ''}">${donor ? initials(donor.name) + ' · ' : ''}Dashboard</a>
        <button id="navLogoutBtn">Log out</button>`;
   } else {

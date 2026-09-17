@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS donors (
     last_donation_date TEXT,
     age             INTEGER,
     gender          TEXT,
+    is_admin        INTEGER NOT NULL DEFAULT 0,
     created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -81,6 +82,21 @@ CREATE INDEX IF NOT EXISTS idx_requests_status ON emergency_requests(status);
 const donorColumns = db.prepare("PRAGMA table_info(donors)").all().map((c) => c.name);
 if (!donorColumns.includes('role')) {
   db.exec("ALTER TABLE donors ADD COLUMN role TEXT NOT NULL DEFAULT 'donor'");
+}
+if (!donorColumns.includes('is_admin')) {
+  db.exec("ALTER TABLE donors ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+}
+
+// ---------------------------------------------------------------------------
+// Owner/admin bootstrap: set ADMIN_EMAIL in your environment (.env locally,
+// or the Render dashboard in production) to the email you registered with.
+// On every server start, that account is promoted to admin automatically —
+// no manual SQL needed. Change ADMIN_EMAIL and restart to switch owners.
+// ---------------------------------------------------------------------------
+if (process.env.ADMIN_EMAIL) {
+  db.prepare('UPDATE donors SET is_admin = 1 WHERE email = ?').run(
+    process.env.ADMIN_EMAIL.toLowerCase().trim()
+  );
 }
 
 module.exports = db;
