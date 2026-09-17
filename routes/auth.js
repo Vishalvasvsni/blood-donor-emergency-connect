@@ -13,6 +13,18 @@ function publicDonor(row) {
   return rest;
 }
 
+// Checks ADMIN_EMAIL on every register/login (not just server startup) so
+// promotion is instant and doesn't depend on a restart — important on hosts
+// like Render's free tier where a restart wipes the (non-persistent) database.
+function promoteIfAdminEmail(donor) {
+  const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+  if (adminEmail && donor.email === adminEmail && !donor.is_admin) {
+    db.prepare('UPDATE donors SET is_admin = 1 WHERE id = ?').run(donor.id);
+    donor.is_admin = 1;
+  }
+  return donor;
+}
+
 // POST /api/auth/register  — donor OR seeker (non-donor) registration.
 // Everyone must have an account to use the site, so `role` distinguishes
 // people who want to donate from people who only want to search / post
@@ -72,6 +84,7 @@ router.post('/register', (req, res) => {
   });
 
   const donor = db.prepare('SELECT * FROM donors WHERE id = ?').get(info.lastInsertRowid);
+  promoteIfAdminEmail(donor);
   const token = jwt.sign({ id: donor.id }, JWT_SECRET, { expiresIn: '30d' });
 
   res.status(201).json({ token, donor: publicDonor(donor) });
@@ -88,6 +101,7 @@ router.post('/login', (req, res) => {
   if (!donor || !bcrypt.compareSync(password, donor.password_hash)) {
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
+  promoteIfAdminEmail(donor);
 
   const token = jwt.sign({ id: donor.id }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, donor: publicDonor(donor) });
@@ -102,6 +116,7 @@ router.get('/me', (req, res) => {
     const payload = jwt.verify(token, JWT_SECRET);
     const donor = db.prepare('SELECT * FROM donors WHERE id = ?').get(payload.id);
     if (!donor) return res.status(401).json({ error: 'Account not found.' });
+    promoteIfAdminEmail(donor);
     res.json({ donor: publicDonor(donor) });
   } catch {
     res.status(401).json({ error: 'Session expired.' });
