@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-require('./config/db'); // initializes schema on startup
+const { initDb } = require('./config/db');
 
 const authRoutes = require('./routes/auth');
 const donorRoutes = require('./routes/donors');
@@ -34,6 +34,22 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`🩸 Blood Donor Emergency Connect running at http://localhost:${PORT}`);
+// Catches any error forwarded by asyncHandler (e.g. a failed database call)
+// instead of letting the request hang or crashing the process.
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
+});
+
+async function start() {
+  await initDb();
+  app.listen(PORT, () => {
+    console.log(`🩸 Blood Donor Emergency Connect running at http://localhost:${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });

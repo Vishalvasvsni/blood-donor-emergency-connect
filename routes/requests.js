@@ -2,12 +2,13 @@ const express = require('express');
 const db = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { compatibleDonorGroupsFor, distanceKm, VALID_GROUPS } = require('../utils/blood');
+const asyncHandler = require('../utils/asyncHandler');
 
 const router = express.Router();
 
 // POST /api/requests — any logged-in account (patient/hospital/NGO) can
 // broadcast an urgent need. Requires login like the rest of the site.
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, asyncHandler(async (req, res) => {
   const {
     patient_name, blood_group, units_needed, hospital_name,
     city, state, latitude, longitude, contact_name, contact_phone, urgency, message,
@@ -20,30 +21,31 @@ router.post('/', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Invalid blood group.' });
   }
 
-  const info = db.prepare(`
-    INSERT INTO emergency_requests
+  const info = await db.run(
+    `INSERT INTO emergency_requests
       (patient_name, blood_group, units_needed, hospital_name, city, state, latitude, longitude, contact_name, contact_phone, urgency, message)
-    VALUES (@patient_name, @blood_group, @units_needed, @hospital_name, @city, @state, @latitude, @longitude, @contact_name, @contact_phone, @urgency, @message)
-  `).run({
-    patient_name,
-    blood_group,
-    units_needed: units_needed || 1,
-    hospital_name,
-    city,
-    state,
-    latitude: latitude ?? null,
-    longitude: longitude ?? null,
-    contact_name,
-    contact_phone,
-    urgency: urgency || 'high',
-    message: message || null,
-  });
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      patient_name,
+      blood_group,
+      units_needed || 1,
+      hospital_name,
+      city,
+      state,
+      latitude ?? null,
+      longitude ?? null,
+      contact_name,
+      contact_phone,
+      urgency || 'high',
+      message || null,
+    ]
+  );
 
-  const created = db.prepare('SELECT * FROM emergency_requests WHERE id = ?').get(info.lastInsertRowid);
+  const created = await db.get('SELECT * FROM emergency_requests WHERE id = ?', [info.lastInsertRowid]);
 
   // Find matching compatible & active donors nearby to suggest to the requester
   const compatibleGroups = compatibleDonorGroupsFor(blood_group);
-  let matches = db.prepare("SELECT * FROM donors WHERE is_active = 1 AND role = 'donor'").all()
+  let matches = (await db.all("SELECT * FROM donors WHERE is_active = 1 AND role = 'donor'"))
     .filter((d) => compatibleGroups.includes(d.blood_group));
 
   matches = matches.map((d) => ({
@@ -60,12 +62,12 @@ router.post('/', requireAuth, (req, res) => {
   matches.sort((a, b) => (a.distance_km ?? Infinity) - (b.distance_km ?? Infinity));
 
   res.status(201).json({ request: created, matchingDonorsCount: matches.length, topMatches: matches.slice(0, 5) });
-});
+}));
 
 // GET /api/requests — board of emergency requests. Requires login.
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const { status = 'open', blood_group, city } = req.query;
-  let rows = db.prepare('SELECT * FROM emergency_requests ORDER BY created_at DESC').all();
+  let rows = await db.all('SELECT * FROM emergency_requests ORDER BY created_at DESC');
 
   if (status !== 'all') rows = rows.filter((r) => r.status === status);
   if (blood_group) rows = rows.filter((r) => r.blood_group === blood_group);
@@ -75,21 +77,21 @@ router.get('/', requireAuth, (req, res) => {
   }
 
   res.json({ count: rows.length, requests: rows });
-});
+}));
 
 // PATCH /api/requests/:id/status — mark fulfilled/expired. Requires login
 // (kept open to any logged-in account, not just the original poster, since
 // this is an academic-scope project without a full ownership model).
-router.patch('/:id/status', requireAuth, (req, res) => {
+router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   const { status } = req.body;
   if (!['open', 'fulfilled', 'expired'].includes(status)) {
     return res.status(400).json({ error: 'Invalid status.' });
   }
-  const existing = db.prepare('SELECT * FROM emergency_requests WHERE id = ?').get(req.params.id);
+  const existing = await db.get('SELECT * FROM emergency_requests WHERE id = ?', [req.params.id]);
   if (!existing) return res.status(404).json({ error: 'Request not found.' });
 
-  db.prepare('UPDATE emergency_requests SET status = ? WHERE id = ?').run(status, req.params.id);
+  await db.run('UPDATE emergency_requests SET status = ? WHERE id = ?', [status, req.params.id]);
   res.json({ message: 'Status updated.' });
-});
+}));
 
 module.exports = router;

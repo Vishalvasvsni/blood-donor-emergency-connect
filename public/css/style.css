@@ -180,7 +180,9 @@ section { padding: 56px 0; }
   height: 44px;
   line-height: 20px;
   padding: 11px 12px; /* match other inputs exactly */
- -webkit-appearance: none; /* iOS adds its own internal chrome/padding on top of ours unless this is stripped, which is what makes the box render taller than other fields */
+  -webkit-appearance: none; /* iOS adds its own internal chrome/padding on top
+                                of ours unless this is stripped, which is what
+                                makes the box render taller than other fields */
   appearance: none;
 }
 .form-row input:focus, .form-row select:focus, .form-row textarea:focus {

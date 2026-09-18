@@ -10,3 +10,9 @@ services:
         generateValue: true
       - key: NODE_VERSION
         value: 20.0.0
+      - key: TURSO_DATABASE_URL
+        sync: false   # you paste this in manually from your Turso dashboard
+      - key: TURSO_AUTH_TOKEN
+        sync: false   # you paste this in manually from your Turso dashboard
+      - key: ADMIN_EMAIL
+        sync: false   # optional: the email you want promoted to admin

@@ -16,7 +16,7 @@ contact system, and an emergency request board — backed by a real database.
 |----------------|--------------------------------------------------|
 | Frontend       | HTML5, CSS3, vanilla JavaScript (fetch API)       |
 | Backend        | Node.js + Express.js                              |
-| Database       | SQLite (via `better-sqlite3`) — file-based, zero setup |
+| Database       | SQLite-compatible (via `@libsql/client`) — a local file for development, or [Turso](https://turso.tech) (free, permanent cloud database) in production |
 | Auth           | JWT (`jsonwebtoken`) + password hashing (`bcryptjs`) |
 | Hosting option | Render / Railway / Vercel / any Node host         |
 | Version control| Git-ready (`.gitignore` included)                 |
@@ -146,27 +146,27 @@ curl http://localhost:3000/api/health
 As the platform owner, you can see every registered user (ID, name, email,
 phone, role, blood group, city, join date) on a dedicated admin panel:
 
-1. **Register a normal account first** (donor or seeker — either works),
-   using the email you want to use as the admin login.
-2. **Set the `ADMIN_EMAIL` environment variable** to that same email:
+1. **Set the `ADMIN_EMAIL` environment variable** to the email you want to
+   use as your admin login:
    - Locally: add `ADMIN_EMAIL=you@example.com` to your `.env` file.
    - On Render: Dashboard → your service → Environment → add
-     `ADMIN_EMAIL` = `you@example.com` → Save (this triggers a restart).
-3. **Restart the server** (locally: stop and re-run `npm start`; on Render
-   this happens automatically after saving the env var). On startup, the
-   app automatically promotes that account to admin — no manual database
-   editing required.
-4. **Log in with that account** and you'll now see a **👑 Admin** link in
+     `ADMIN_EMAIL` = `you@example.com` → Save.
+2. **Register (or log in, if you already have an account) with that exact
+   email.** The promotion check runs on every register and every login, so
+   it takes effect immediately — no server restart needed either way, and
+   the order (register-then-set-env-var, or set-env-var-then-register)
+   doesn't matter.
+3. **Log in with that account** and you'll now see a **👑 Admin** link in
    the navbar, leading to `/admin.html`, where you can:
    - See every user's ID, name, email, phone, role, blood group, city, and
      join date, with search/filter by name, email, or role
    - See summary counts (total users, donors, seekers, active donors)
    - Delete a user if needed (moderation)
 
-You can promote a different email later by changing `ADMIN_EMAIL` and
-restarting — the previous admin flag isn't automatically removed from the
-old account, so revoke it manually via the admin panel's delete button if
-you need to fully replace ownership.
+You can promote a different email later by changing `ADMIN_EMAIL` — the
+previous admin flag isn't automatically removed from the old account, so
+revoke it manually via the admin panel's delete button if you need to fully
+replace ownership.
 
 ---
 
@@ -199,36 +199,54 @@ you need to fully replace ownership.
 
 ## 7. Deployment (synopsis §6 — Hosting/Deployment)
 
-Because this is plain Node.js + a file-based SQLite database, it deploys
-cleanly to any Node host:
+The app is Node.js + a SQLite-compatible database, so it deploys cleanly to
+any Node host. **Persistence matters here**: Render's free tier (and most
+free hosts) wipe local files every time the service restarts, redeploys, or
+spins down from inactivity — so without the Turso setup below, everyone
+would need to re-register periodically. See §7.1 to fix that permanently,
+for free.
 
 - **Render (free tier)** — New → Blueprint → connect repo. Render reads
   `render.yaml` and auto-configures the build/start commands and a random
-  `JWT_SECRET`. **Note:** Render's free tier does not support persistent
-  disks, so the SQLite file lives in the app's normal filesystem and will
-  reset whenever you push new code or the service restarts (data survives
-  normal usage in between — it's only redeploys/restarts that reset it).
-  This is fine for coursework demos/viva. If you need donor data to survive
-  every redeploy, upgrade that one service to Render's **Starter plan**
-  (~$7/month), which unlocks persistent disks — then add a `disk:` block
-  back to `render.yaml` (see the commented example below) and set `DB_PATH`
-  to a path under that disk.
-- **Railway** — similar flow, and its free trial credit includes **volumes**
-  (their equivalent of a persistent disk) even before you add a card, so it
-  can be a better free option if data persistence across redeploys matters
-  to you for the demo.
+  `JWT_SECRET`.
+- **Railway** — similar flow, and its free trial credit includes volumes if
+  you'd rather use a persistent disk approach instead of Turso.
 - **Vercel/Netlify** are better suited to the static frontend only — for the
   full app (with the Express API), Render/Railway/Fly.io are simpler.
 
-Before deploying:
-1. Set a strong, random `JWT_SECRET` in the platform's environment
-   variables (the Render blueprint generates this for you automatically —
-   never commit `.env`).
-2. If you're on a plan with a persistent disk, set `DB_PATH` to point inside
-   it (e.g. `/var/data/blood_donor.db`) so the database survives redeploys.
+### 7.1 Persistent Database with Turso (free, permanent, no restarts needed)
+
+By default the app falls back to a local SQLite file, which is fine for
+local development but resets on Render as described above. [Turso](https://turso.tech)
+gives you a free, permanent, SQLite-compatible cloud database with no
+30-day expiry — the app already supports it, you just need to create one
+and point two environment variables at it.
+
+1. Go to [turso.tech](https://turso.tech) and sign up (free, no card
+   required).
+2. From the dashboard, create a new database (any name, any region close to
+   you — e.g. `blood-donor-connect`).
+3. Open the database and find its **connection URL** — it looks like
+   `libsql://blood-donor-connect-yourname.turso.io`.
+4. Generate an **auth token** for it from the same dashboard (usually a
+   "Create Token" or "Generate Token" button on the database's page).
+5. On Render: your service → **Environment** tab → add:
+   - `TURSO_DATABASE_URL` = the URL from step 3
+   - `TURSO_AUTH_TOKEN` = the token from step 4
+6. Save — Render redeploys automatically. From this point on, your data
+   lives in Turso's cloud, not on Render's disk, so it survives every
+   restart, redeploy, and spin-down permanently.
+
+Locally, if you don't set these two variables, the app just uses the local
+SQLite file as before — no changes needed for local development.
 
 <details>
-<summary>Optional: render.yaml with a persistent disk (paid plans only)</summary>
+<summary>Alternative: persistent disk on a paid Render plan (no Turso needed)</summary>
+
+If you'd rather pay for Render's Starter plan (~$7/month) than use an
+external database, you can still do it the original way: set `DB_PATH` to
+a path under a mounted persistent disk, and add a `disk:` block to
+`render.yaml`:
 
 ```yaml
 services:
@@ -250,16 +268,18 @@ services:
       mountPath: /var/data
       sizeGB: 1
 ```
+Don't set `TURSO_DATABASE_URL` if you use this approach — the app checks
+for Turso first and only falls back to the local file (governed by
+`DB_PATH`) when Turso isn't configured.
 </details>
 
-### Migrating to Firebase or MongoDB (optional, per synopsis §6 alternatives)
-All database access is isolated to `config/db.js` and the route files. To
-switch to MongoDB, replace `config/db.js` with a Mongoose connection and
-adjust the `db.prepare(...).get()/.run()/.all()` calls in `routes/*.js` to
-Mongoose model calls — the route logic (validation, compatibility matching,
-distance ranking) stays the same. This keeps the option open for the
-"Scope"/future-enhancements section of the synopsis (e.g. hospital
-inventory integration) without a rewrite.
+### Migrating to MongoDB (optional, per synopsis §6 alternatives)
+All database access is isolated to `config/db.js` (which exports simple
+`get`/`all`/`run` helpers) and the route files. To switch to MongoDB,
+replace `config/db.js` with a Mongoose connection exposing the same shape,
+or refactor the route files to Mongoose model calls directly — the route
+logic (validation, compatibility matching, distance ranking) stays the
+same either way.
 
 ---
 
