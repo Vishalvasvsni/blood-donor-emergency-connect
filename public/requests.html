@@ -205,12 +205,16 @@
   }
 
   function renderRequestCard(r) {
+    const currentDonor = Auth.getDonor();
+    const isOwner = currentDonor && currentDonor.id === r.posted_by;
+    const isAdmin = currentDonor && currentDonor.is_admin;
+    const canManage = r.status === 'open' && (isOwner || isAdmin);
     return `
       <div class="request-card status-${r.status}">
         <div class="request-top">
           <div>
             <p class="request-title">${r.units_needed} unit(s) of ${r.blood_group} needed for ${r.patient_name}</p>
-            <div class="request-meta">🏥 ${r.hospital_name} · 📍 ${r.city}, ${r.state} · 🕒 ${timeAgo(r.created_at)}</div>
+            <div class="request-meta">🏥 ${r.hospital_name} · 📍 ${r.city}, ${r.state} · 🕒 ${timeAgo(r.created_at)}${isOwner ? ' · <strong>Posted by you</strong>' : ''}</div>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             ${urgencyBadge(r.urgency)} ${statusBadge(r.status)}
@@ -219,7 +223,7 @@
         ${r.message ? `<p class="request-msg">"${escapeHtml(r.message)}"</p>` : ''}
         <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <span style="font-size:0.9rem;">📞 Contact: <strong>${r.contact_name}</strong> — ${r.contact_phone}</span>
-          ${r.status === 'open' ? `<button class="btn btn-secondary btn-sm mark-fulfilled" data-id="${r.id}">Mark as Fulfilled</button>` : ''}
+          ${canManage ? `<button class="btn btn-secondary btn-sm mark-fulfilled" data-id="${r.id}">Mark as Fulfilled</button>` : ''}
         </div>
       </div>
     `;

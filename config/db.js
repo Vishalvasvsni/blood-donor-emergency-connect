@@ -93,6 +93,7 @@ async function initDb() {
         urgency         TEXT    NOT NULL DEFAULT 'high' CHECK(urgency IN ('low','medium','high','critical')),
         message         TEXT,
         status          TEXT    NOT NULL DEFAULT 'open' CHECK(status IN ('open','fulfilled','expired')),
+        posted_by       INTEGER REFERENCES donors(id) ON DELETE SET NULL,
         created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -119,6 +120,11 @@ async function initDb() {
   }
   if (!columns.includes('is_admin')) {
     await client.execute('ALTER TABLE donors ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0');
+  }
+
+  const requestColumns = (await all('PRAGMA table_info(emergency_requests)')).map((c) => c.name);
+  if (!requestColumns.includes('posted_by')) {
+    await client.execute('ALTER TABLE emergency_requests ADD COLUMN posted_by INTEGER REFERENCES donors(id) ON DELETE SET NULL');
   }
 
   console.log(`🗄️  Database ready (${usingTurso ? 'Turso cloud — persistent' : `local file: ${localDbPath}`})`);

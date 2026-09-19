@@ -23,8 +23,8 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
 
   const info = await db.run(
     `INSERT INTO emergency_requests
-      (patient_name, blood_group, units_needed, hospital_name, city, state, latitude, longitude, contact_name, contact_phone, urgency, message)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (patient_name, blood_group, units_needed, hospital_name, city, state, latitude, longitude, contact_name, contact_phone, urgency, message, posted_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       patient_name,
       blood_group,
@@ -38,6 +38,7 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
       contact_phone,
       urgency || 'high',
       message || null,
+      req.donorId,
     ]
   );
 
@@ -79,9 +80,12 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
   res.json({ count: rows.length, requests: rows });
 }));
 
-// PATCH /api/requests/:id/status — mark fulfilled/expired. Requires login
-// (kept open to any logged-in account, not just the original poster, since
-// this is an academic-scope project without a full ownership model).
+// PATCH /api/requests/:id/status — mark fulfilled/expired. Only the account
+// that originally posted the request can change its status — this is
+// enforced here on the server, not just hidden in the UI, so it can't be
+// bypassed by calling the API directly. The platform admin can also update
+// any request, for moderation (e.g. very old requests posted before this
+// ownership tracking existed, which have no recorded poster).
 router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   const { status } = req.body;
   if (!['open', 'fulfilled', 'expired'].includes(status)) {
@@ -89,6 +93,13 @@ router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   }
   const existing = await db.get('SELECT * FROM emergency_requests WHERE id = ?', [req.params.id]);
   if (!existing) return res.status(404).json({ error: 'Request not found.' });
+
+  const requester = await db.get('SELECT is_admin FROM donors WHERE id = ?', [req.donorId]);
+  const isOwner = existing.posted_by === req.donorId;
+  const isAdmin = requester && requester.is_admin;
+  if (!isOwner && !isAdmin) {
+    return res.status(403).json({ error: 'Only the person who posted this request can update it.' });
+  }
 
   await db.run('UPDATE emergency_requests SET status = ? WHERE id = ?', [status, req.params.id]);
   res.json({ message: 'Status updated.' });
