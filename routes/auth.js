@@ -17,9 +17,20 @@ function publicDonor(row) {
 // Checks ADMIN_EMAIL on every register/login (not just server startup) so
 // promotion is instant and doesn't depend on a restart — important on hosts
 // like Render's free tier where a restart can wipe a non-persistent database.
+// ADMIN_EMAIL can hold more than one address, comma-separated, e.g.
+// "owner@example.com, cofounder@example.com" — every matching account gets
+// promoted. Beyond this bootstrap list, existing admins can also promote
+// any other user from the Admin Panel (see routes/admin.js), so the total
+// number of admins isn't limited to what's in this env var.
+function adminEmailList() {
+  return (process.env.ADMIN_EMAIL || '')
+    .split(',')
+    .map((e) => e.toLowerCase().trim())
+    .filter(Boolean);
+}
+
 async function promoteIfAdminEmail(donor) {
-  const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
-  if (adminEmail && donor.email === adminEmail && !donor.is_admin) {
+  if (adminEmailList().includes(donor.email) && !donor.is_admin) {
     await db.run('UPDATE donors SET is_admin = 1 WHERE id = ?', [donor.id]);
     donor.is_admin = 1;
   }

@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Admin Panel · Blood Donor Emergency Connect</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -49,9 +48,7 @@
   </div>
 </div>
 
-<footer>
-  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
-</footer>
+<footer>Blood Donor Emergency Connect &middot; Admin Panel</footer>
 
 <script src="/js/app.js"></script>
 <script>
@@ -68,6 +65,7 @@
     throw new Error('Not admin');
   }
 
+  const currentAdminId = donor.id;
   let allUsers = [];
 
   async function loadSummary() {
@@ -114,8 +112,11 @@
               <td style="padding:10px 12px; font-size:0.85rem;">${u.city}, ${u.state}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.role === 'donor' ? (u.is_active ? '<span class="badge badge-active">Available</span>' : '<span class="badge badge-inactive">Inactive</span>') : '—'}</td>
               <td style="padding:10px 12px; font-size:0.8rem; color:var(--muted);">${u.created_at}</td>
-              <td style="padding:10px 12px;">
-                ${u.is_admin ? '' : `<button class="btn btn-sm" style="background:#fdeceb; color:#9c2020;" data-id="${u.id}" data-name="${u.name}">Delete</button>`}
+              <td style="padding:10px 12px; white-space:nowrap;">
+                ${u.is_admin
+                  ? (u.id === currentAdminId ? '' : `<button class="btn btn-sm demote-btn" style="background:#f1f1f1; color:var(--muted); margin-right:6px;" data-id="${u.id}" data-name="${u.name}">Revoke Admin</button>`)
+                  : `<button class="btn btn-sm promote-btn" style="background:#fff4d6; color:#a16207; margin-right:6px;" data-id="${u.id}" data-name="${u.name}">Make Admin</button>
+                     <button class="btn btn-sm delete-btn" style="background:#fdeceb; color:#9c2020;" data-id="${u.id}" data-name="${u.name}">Delete</button>`}
               </td>
             </tr>
           `).join('')}
@@ -123,13 +124,33 @@
       </table>
     `;
 
-    wrap.querySelectorAll('button[data-id]').forEach((btn) => {
+    wrap.querySelectorAll('.delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         if (!confirm(`Delete user "${btn.dataset.name}"? This cannot be undone.`)) return;
         try {
           await api(`/admin/users/${btn.dataset.id}`, { method: 'DELETE', auth: true });
           loadUsers();
           loadSummary();
+        } catch (err) { alert(err.message); }
+      });
+    });
+
+    wrap.querySelectorAll('.promote-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Make "${btn.dataset.name}" an admin? They'll get full access to this panel.`)) return;
+        try {
+          await api(`/admin/users/${btn.dataset.id}/promote`, { method: 'PATCH', auth: true });
+          loadUsers();
+        } catch (err) { alert(err.message); }
+      });
+    });
+
+    wrap.querySelectorAll('.demote-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Revoke admin rights from "${btn.dataset.name}"?`)) return;
+        try {
+          await api(`/admin/users/${btn.dataset.id}/demote`, { method: 'PATCH', auth: true });
+          loadUsers();
         } catch (err) { alert(err.message); }
       });
     });

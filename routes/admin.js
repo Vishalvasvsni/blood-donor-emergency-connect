@@ -51,4 +51,25 @@ router.delete('/users/:id', requireAuth, requireAdmin, asyncHandler(async (req, 
   res.json({ message: 'User deleted.' });
 }));
 
+// PATCH /api/admin/users/:id/promote — grant admin rights to any user.
+// There's no limit on how many admins can exist — any current admin can
+// promote any other registered user this way, at any time.
+router.patch('/users/:id/promote', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const target = await db.get('SELECT id FROM donors WHERE id = ?', [req.params.id]);
+  if (!target) return res.status(404).json({ error: 'User not found.' });
+  await db.run('UPDATE donors SET is_admin = 1 WHERE id = ?', [req.params.id]);
+  res.json({ message: 'User promoted to admin.' });
+}));
+
+// PATCH /api/admin/users/:id/demote — revoke admin rights from a user.
+router.patch('/users/:id/demote', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  if (Number(req.params.id) === req.donorId) {
+    return res.status(400).json({ error: "You can't remove your own admin rights from here." });
+  }
+  const target = await db.get('SELECT id FROM donors WHERE id = ?', [req.params.id]);
+  if (!target) return res.status(404).json({ error: 'User not found.' });
+  await db.run('UPDATE donors SET is_admin = 0 WHERE id = ?', [req.params.id]);
+  res.json({ message: 'Admin rights revoked.' });
+}));
+
 module.exports = router;
