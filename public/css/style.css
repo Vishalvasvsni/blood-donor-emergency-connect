@@ -22,6 +22,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   line-height: 1.5;
+  padding-top: 64px;
 }
 
 a { color: var(--red); text-decoration: none; }
@@ -37,9 +38,12 @@ a:hover { text-decoration: underline; }
 .navbar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
+  width: 100%;
 }
 .navbar .container {
   display: flex;
@@ -315,13 +319,43 @@ footer {
   .dash-grid { grid-template-columns: 1fr; }
   .stats-strip { grid-template-columns: repeat(2, 1fr); }
   .search-controls { grid-template-columns: 1fr; }
+  .navbar .container {
+    min-height: 64px;
+    gap: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .brand {
+    font-size: 1rem;
+    max-width: calc(100% - 52px);
+    line-height: 1.2;
+  }
+  .nav-links {
+    display: none;
+  }
+  .nav-links.open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 10px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.05);
+  }
+  .nav-links a, .nav-links button {
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+  }
+  .hamburger { display: block; }
 }
 @media (max-width: 640px) {
   .hero h1 { font-size: 1.8rem; }
   .form-grid-2 { grid-template-columns: 1fr; }
-  .nav-links { display: none; }
-  .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: white; padding: 10px 20px 16px; border-bottom: 1px solid var(--border); }
-  .hamburger { display: block; }
+  .brand { font-size: 0.92rem; }
   .donor-card { flex-direction: column; align-items: flex-start; }
   .donor-actions { width: 100%; justify-content: flex-start; }
 }
