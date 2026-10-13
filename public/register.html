@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Register as a Donor · Blood Donor Emergency Connect</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>Register · Blood Donor Emergency Connect</title>
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -13,51 +12,84 @@
 
 <div class="container">
   <div class="form-wrap wide">
-    <h2>Register as a Blood Donor</h2>
-    <p class="subtitle">Takes under two minutes. You can update your availability anytime.</p>
+    <h2>Create your account</h2>
+    <p class="subtitle">Takes a couple of minutes. We verify your email and mobile number with a one-time code.</p>
 
     <div class="alert alert-error" id="formAlert"></div>
 
-    <form id="registerForm">
+    <form id="registerForm" novalidate>
       <div class="form-row">
         <label>I want to:</label>
-        <div style="display:flex; gap:10px; margin-top:6px;">
-          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; cursor:pointer;">
+        <div style="display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
             <input type="radio" name="role" value="donor" checked style="width:auto;" />
             🩸 Register as a Blood Donor
           </label>
-          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; cursor:pointer;">
+          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
             <input type="radio" name="role" value="seeker" style="width:auto;" />
             🔍 Just search / post requests
           </label>
         </div>
       </div>
 
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" required placeholder="e.g. Vishal Vaswani" />
+      <div class="form-row">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required placeholder="e.g. Vishal Vaswani" />
+      </div>
+
+      <div class="form-row">
+        <label for="email">Email</label>
+        <div class="verify-row">
+          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email" />
+          <button type="button" class="btn btn-secondary btn-sm" id="emailSendBtn">Send OTP</button>
         </div>
-        <div class="form-row">
-          <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="you@example.com" />
+        <div class="otp-box" id="emailOtpBox">
+          <input type="text" id="emailOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
+          <button type="button" class="btn btn-primary btn-sm" id="emailVerifyBtn">Verify</button>
         </div>
+        <div class="verify-status" id="emailStatus"></div>
       </div>
 
       <div class="form-grid-2">
         <div class="form-row">
-          <label for="phone">Phone Number</label>
-          <input type="tel" id="phone" required placeholder="+91 98765 43210" />
+          <label for="phone">Mobile Number</label>
+          <div class="verify-row">
+            <input type="tel" id="phone" required placeholder="98765 43210" autocomplete="tel" />
+            <button type="button" class="btn btn-secondary btn-sm" id="phoneSendBtn">Send OTP</button>
+          </div>
+          <div class="otp-box" id="phoneOtpBox">
+            <input type="text" id="phoneOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
+            <button type="button" class="btn btn-primary btn-sm" id="phoneVerifyBtn">Verify</button>
+          </div>
+          <div class="verify-status" id="phoneStatus"></div>
         </div>
         <div class="form-row" id="bloodGroupRow">
           <label for="blood_group">Blood Group</label>
-          <select id="blood_group" required>
+          <select id="blood_group">
             <option value="">Select</option>
             <option>A+</option><option>A-</option>
             <option>B+</option><option>B-</option>
             <option>AB+</option><option>AB-</option>
             <option>O+</option><option>O-</option>
           </select>
+        </div>
+      </div>
+
+      <div id="healthRow">
+        <div class="form-row">
+          <label>Do you have Sugar (diabetes)?</label>
+          <div class="yesno">
+            <label><input type="radio" name="has_sugar" value="yes" /> Yes</label>
+            <label><input type="radio" name="has_sugar" value="no" /> No</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Do you have BP (blood pressure) problems?</label>
+          <div class="yesno">
+            <label><input type="radio" name="has_bp" value="yes" /> Yes</label>
+            <label><input type="radio" name="has_bp" value="no" /> No</label>
+          </div>
+          <p class="hint" style="margin:8px 0 0;">Your Yes/No answers for Sugar and BP are shown to people who search for donors, so they can pick a suitable donor.</p>
         </div>
       </div>
 
@@ -96,91 +128,201 @@
       <div class="form-grid-2">
         <div class="form-row">
           <label for="password">Password</label>
-          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" />
+          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password" />
         </div>
         <div class="form-row">
           <label for="confirm_password">Confirm Password</label>
-          <input type="password" id="confirm_password" required minlength="6" placeholder="Re-enter password" />
+          <input type="password" id="confirm_password" required minlength="6" placeholder="Re-enter password" autocomplete="new-password" />
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Register as Donor</button>
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Create Account</button>
     </form>
 
     <p class="form-footer-link">Already registered? <a href="/login.html">Log in</a></p>
   </div>
 </div>
 
-<footer>
-  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
-</footer>
+<footer>Blood Donor Emergency Connect &middot; BCA Project Synopsis 2026-27</footer>
 
 <script src="/js/app.js"></script>
 <script>
-  // If already logged in, no need to register again
   if (Auth.isLoggedIn()) window.location.replace('/index.html');
   renderNavbar();
 
-  const form = document.getElementById('registerForm');
-  const submitBtn = document.getElementById('submitBtn');
-  const bloodGroupRow = document.getElementById('bloodGroupRow');
-  const bloodGroupSelect = document.getElementById('blood_group');
+  const $ = (id) => document.getElementById(id);
+  const form = $('registerForm');
+  const submitBtn = $('submitBtn');
 
+  let verificationRequired = true;
+  const state = {
+    email: { value: '', token: null, timer: null },
+    phone: { value: '', token: null, timer: null },
+  };
+
+  // ---- role toggle: health questions + blood group only apply to donors ----
+  function currentRole() { return document.querySelector('input[name="role"]:checked').value; }
   function updateRoleUI() {
-    const role = document.querySelector('input[name="role"]:checked').value;
-    if (role === 'seeker') {
-      bloodGroupRow.style.opacity = '0.6';
-      bloodGroupSelect.required = false;
-    } else {
-      bloodGroupRow.style.opacity = '1';
-      bloodGroupSelect.required = true;
-    }
+    const donor = currentRole() === 'donor';
+    $('healthRow').style.display = donor ? 'block' : 'none';
+    $('bloodGroupRow').style.opacity = donor ? '1' : '0.6';
   }
   document.querySelectorAll('input[name="role"]').forEach((r) => r.addEventListener('change', updateRoleUI));
   updateRoleUI();
 
+  // ---- OTP verification (one block of logic used for both email and phone) ----
+  function setStatus(channel, text, cls) {
+    const el = $(channel + 'Status');
+    el.textContent = text || '';
+    el.className = 'verify-status' + (cls ? ' ' + cls : '');
+  }
+
+  function startCooldown(channel, seconds) {
+    const btn = $(channel + 'SendBtn');
+    let left = seconds;
+    clearInterval(state[channel].timer);
+    btn.disabled = true;
+    btn.textContent = `Resend (${left}s)`;
+    state[channel].timer = setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(state[channel].timer);
+        btn.disabled = false;
+        btn.textContent = 'Resend OTP';
+      } else {
+        btn.textContent = `Resend (${left}s)`;
+      }
+    }, 1000);
+  }
+
+  function resetVerification(channel) {
+    state[channel].token = null;
+    $(channel + 'OtpBox').classList.remove('show');
+    $(channel + 'Otp').value = '';
+    $(channel).readOnly = false;
+    clearInterval(state[channel].timer);
+    $(channel + 'SendBtn').disabled = false;
+    $(channel + 'SendBtn').textContent = 'Send OTP';
+    setStatus(channel, '');
+  }
+
+  // Editing the field after verifying means it must be verified again.
+  ['email', 'phone'].forEach((channel) => {
+    $(channel).addEventListener('input', () => {
+      if (state[channel].token || $(channel + 'OtpBox').classList.contains('show')) resetVerification(channel);
+    });
+
+    $(channel + 'SendBtn').addEventListener('click', async () => {
+      hideAlert('formAlert');
+      const target = $(channel).value.trim();
+      if (!target) return setStatus(channel, `Enter your ${channel === 'email' ? 'email' : 'mobile number'} first.`, 'err');
+      setStatus(channel, 'Sending…');
+      $(channel + 'SendBtn').disabled = true;
+      try {
+        const r = await api('/auth/send-otp', { method: 'POST', body: { channel, target } });
+        state[channel].value = target;
+        $(channel + 'OtpBox').classList.add('show');
+        $(channel + 'Otp').focus();
+        if (r.mode === 'dev') {
+          setStatus(channel, '');
+          $(channel + 'Status').innerHTML = `<div class="demo-note">DEMO MODE: no ${channel === 'email' ? 'email' : 'SMS'} was sent. Your code is <strong>${r.dev_otp}</strong></div>`;
+        } else {
+          setStatus(channel, channel === 'email' ? 'Code sent — check your inbox (and spam folder).' : 'Code sent by SMS.');
+        }
+        startCooldown(channel, 30);
+      } catch (err) {
+        $(channel + 'SendBtn').disabled = false;
+        setStatus(channel, err.message, 'err');
+      }
+    });
+
+    $(channel + 'VerifyBtn').addEventListener('click', async () => {
+      const code = $(channel + 'Otp').value.trim();
+      if (!/^\d{6}$/.test(code)) return setStatus(channel, 'Enter the 6-digit code.', 'err');
+      $(channel + 'VerifyBtn').disabled = true;
+      try {
+        const r = await api('/auth/verify-otp', { method: 'POST', body: { channel, target: $(channel).value.trim(), code } });
+        state[channel].token = r.token;
+        $(channel + 'OtpBox').classList.remove('show');
+        $(channel).readOnly = true;
+        clearInterval(state[channel].timer);
+        $(channel + 'SendBtn').disabled = true;
+        $(channel + 'SendBtn').textContent = 'Verified';
+        setStatus(channel, `✔ ${channel === 'email' ? 'Email' : 'Mobile number'} verified`, 'ok');
+      } catch (err) {
+        setStatus(channel, err.message, 'err');
+      } finally {
+        $(channel + 'VerifyBtn').disabled = false;
+      }
+    });
+  });
+
+  // ---- load server settings: hide OTP UI if verification is switched off ----
+  (async () => {
+    try {
+      const cfg = await api('/auth/verification-config');
+      verificationRequired = cfg.required;
+      if (!cfg.required) {
+        ['email', 'phone'].forEach((c) => $(c + 'SendBtn').style.display = 'none');
+      } else if (cfg.email === 'none' || cfg.phone === 'none') {
+        showAlert('formAlert', 'Sign-up is temporarily unavailable: email/mobile verification has not been set up on this server yet. Please contact the site administrator.');
+      } else if (cfg.email === 'dev' || cfg.phone === 'dev') {
+        const which = [cfg.email === 'dev' ? 'email' : null, cfg.phone === 'dev' ? 'mobile' : null].filter(Boolean).join(' and ');
+        showAlert('formAlert', `Demo mode: ${which} verification codes will be shown on screen instead of being sent.`, 'success');
+      }
+    } catch (e) { /* keep defaults; the server enforces regardless */ }
+  })();
+
+  // ---- submit ----
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert('formAlert');
 
-    const password = document.getElementById('password').value;
-    const confirm = document.getElementById('confirm_password').value;
-    if (password !== confirm) {
-      return showAlert('formAlert', 'Passwords do not match.');
-    }
+    const role = currentRole();
+    const required = ['name', 'email', 'phone', 'city', 'state', 'password'];
+    if (required.some((id) => !$(id).value.trim())) return showAlert('formAlert', 'Please fill in all required fields.');
+    if (role === 'donor' && !$('blood_group').value) return showAlert('formAlert', 'Please select your blood group.');
+
+    const sugar = document.querySelector('input[name="has_sugar"]:checked');
+    const bp = document.querySelector('input[name="has_bp"]:checked');
+    if (role === 'donor' && (!sugar || !bp)) return showAlert('formAlert', 'Please answer both the Sugar and BP questions.');
+
+    if ($('password').value !== $('confirm_password').value) return showAlert('formAlert', 'Passwords do not match.');
+    if (verificationRequired && !state.email.token) return showAlert('formAlert', 'Please verify your email with the OTP first.');
+    if (verificationRequired && !state.phone.token) return showAlert('formAlert', 'Please verify your mobile number with the OTP first.');
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Registering...';
+    submitBtn.textContent = 'Creating account…';
 
     let coords = null;
-    if (document.getElementById('shareLocation').checked) {
-      coords = await getBrowserLocation();
-    }
+    if ($('shareLocation').checked) coords = await getBrowserLocation();
 
     try {
-      const role = document.querySelector('input[name="role"]:checked').value;
       const payload = {
-        name: document.getElementById('name').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        password,
-        phone: document.getElementById('phone').value.trim(),
+        name: $('name').value.trim(),
+        email: $('email').value.trim(),
+        password: $('password').value,
+        phone: $('phone').value.trim(),
         role,
-        blood_group: document.getElementById('blood_group').value || null,
-        city: document.getElementById('city').value.trim(),
-        state: document.getElementById('state').value.trim(),
-        age: document.getElementById('age').value || null,
-        gender: document.getElementById('gender').value || null,
+        blood_group: $('blood_group').value || null,
+        has_sugar: sugar ? sugar.value === 'yes' : null,
+        has_bp: bp ? bp.value === 'yes' : null,
+        email_token: state.email.token,
+        phone_token: state.phone.token,
+        city: $('city').value.trim(),
+        state: $('state').value.trim(),
+        age: $('age').value || null,
+        gender: $('gender').value || null,
         latitude: coords ? coords.lat : null,
         longitude: coords ? coords.lng : null,
       };
-
       const data = await api('/auth/register', { method: 'POST', body: payload });
       Auth.setSession(data.token, data.donor);
       window.location.href = '/index.html';
     } catch (err) {
       showAlert('formAlert', err.message);
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Register as Donor';
+      submitBtn.textContent = 'Create Account';
     }
   });
 </script>

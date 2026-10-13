@@ -16,9 +16,12 @@ const Auth = {
     return raw ? JSON.parse(raw) : null;
   },
   updateDonor(donor) { localStorage.setItem('bdec_donor', JSON.stringify(donor)); },
-  logout() {
+  clear() {
     localStorage.removeItem('bdec_token');
     localStorage.removeItem('bdec_donor');
+  },
+  logout() {
+    this.clear();
     window.location.href = '/index.html';
   },
   isLoggedIn() { return !!this.getToken(); },
@@ -38,7 +41,18 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   let data;
   try { data = await res.json(); } catch { data = {}; }
   if (!res.ok) {
-    throw new Error(data.error || 'Something went wrong. Please try again.');
+    // For logged-in calls: a deleted account or expired session sends the
+    // person to the login page, and an admin block locks them out at once.
+    if (auth && res.status === 401) {
+      Auth.clear();
+      window.location.href = '/login.html?expired=1';
+    } else if (auth && res.status === 403 && data.blocked) {
+      Auth.clear();
+      window.location.href = '/login.html?blocked=1';
+    }
+    const err = new Error(data.error || 'Something went wrong. Please try again.');
+    err.data = data;
+    throw err;
   }
   return data;
 }

@@ -144,29 +144,89 @@ curl http://localhost:3000/api/health
 ## 5.5 Admin Access
 
 As the platform owner, you can see every registered user (ID, name, email,
-phone, role, blood group, city, join date) on a dedicated admin panel:
+phone, role, blood group, city, join date) on a dedicated admin panel. **You
+are not limited to one admin** — there are two ways to have more than one:
 
-1. **Set the `ADMIN_EMAIL` environment variable** to the email you want to
-   use as your admin login:
-   - Locally: add `ADMIN_EMAIL=you@example.com` to your `.env` file.
-   - On Render: Dashboard → your service → Environment → add
-     `ADMIN_EMAIL` = `you@example.com` → Save.
-2. **Register (or log in, if you already have an account) with that exact
-   email.** The promotion check runs on every register and every login, so
-   it takes effect immediately — no server restart needed either way, and
-   the order (register-then-set-env-var, or set-env-var-then-register)
-   doesn't matter.
-3. **Log in with that account** and you'll now see a **👑 Admin** link in
-   the navbar, leading to `/admin.html`, where you can:
-   - See every user's ID, name, email, phone, role, blood group, city, and
-     join date, with search/filter by name, email, or role
-   - See summary counts (total users, donors, seekers, active donors)
-   - Delete a user if needed (moderation)
+**Option A — bootstrap list via `ADMIN_EMAIL`:**
+1. Set `ADMIN_EMAIL` to one email, or several separated by commas:
+   - Locally: `ADMIN_EMAIL=owner@example.com, cofounder@example.com` in `.env`.
+   - On Render: Dashboard → your service → Environment → add `ADMIN_EMAIL`
+     with that same comma-separated value → Save.
+2. Register (or log in, if the account already exists) with any of those
+   exact emails. The promotion check runs on every register and every
+   login, so it takes effect immediately — no restart needed, and the order
+   (register-then-set-env-var, or the reverse) doesn't matter.
 
-You can promote a different email later by changing `ADMIN_EMAIL` — the
-previous admin flag isn't automatically removed from the old account, so
-revoke it manually via the admin panel's delete button if you need to fully
-replace ownership.
+**Option B — promote from inside the Admin Panel (no env var editing):**
+Once you have at least one admin account (via Option A), that admin can
+open `/admin.html` and click **Make Admin** next to any other user's row to
+grant them admin rights on the spot — no environment variables or restarts
+involved. An admin can also click **Revoke Admin** to remove another
+admin's access (you can't revoke your own from the panel, to avoid locking
+yourself out — use `ADMIN_EMAIL` or ask another admin if you need that).
+
+Logged in as an admin, you'll see a **👑 Admin** link in the navbar leading
+to `/admin.html`, where you can:
+- See every user's ID, name, email, phone, role, blood group, city, and
+  join date, with search/filter by name, email, or role
+- See summary counts (total users, donors, seekers, active donors)
+- Promote another user to admin, revoke another admin's access, or delete
+  a user (moderation)
+
+---
+
+## 5.6 Verification, health info, cool-down and blocking
+
+**Verifying email and mobile number.** To register, a person must prove they
+own both: they press *Send OTP*, receive a 6-digit code, and enter it. Codes
+expire after 10 minutes, allow 5 wrong attempts, are stored hashed, and are
+rate-limited (30 s between sends, 5 per hour per address/number, plus a
+per-network cap). The server itself checks the verification before creating
+the account, so it can't be bypassed from the browser. One account per
+mobile number (`+91 98765 43210` and `09876543210` count as the same).
+A ✔ Verified badge shows on donors in search. Accounts created before this
+update stay usable but aren't marked verified. The mobile number can't be
+edited from the dashboard afterwards.
+
+Delivery setup (set these as environment variables on Render):
+
+| Channel | Provider | Variables | Cost |
+|---|---|---|---|
+| Email | [Brevo](https://www.brevo.com) HTTPS API | `BREVO_API_KEY`, `EMAIL_FROM` (a sender you verified in Brevo) | Free, 300/day |
+| SMS | Fast2SMS (India) | `FAST2SMS_API_KEY` | Paid per SMS |
+| SMS | Twilio | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Trial only reaches numbers you pre-verify |
+
+Render's free tier blocks SMTP ports (25/465/587), which is why email uses an
+HTTPS API instead of Gmail/SMTP. **If you set nothing, sign-up shows
+"verification not set up" and nobody can register.** For a demo, set
+`OTP_DEV_MODE=true`: any channel without a provider shows its code on screen
+instead of sending it (a yellow "Demo mode" banner appears). That proves
+nothing about who owns the email/number, so don't leave it on for real users.
+You can mix them — real email via Brevo plus demo-mode SMS is allowed.
+`REQUIRE_VERIFICATION=false` switches verification off completely.
+
+**Sugar and BP.** Donors answer two Yes/No questions at sign-up (and can edit
+them on the dashboard). Other logged-in users see them as chips on each donor
+in search. Search results expose only name, blood group, city/state, distance,
+the Sugar/BP answers and the verified badge — never email, phone or exact
+location (the phone appears only through the logged *Reveal Contact* action).
+
+**Donation cool-down.** When a donor saves a last-donation date, they are
+switched off automatically and hidden from search for `DONATION_COOLDOWN_DAYS`
+days (default 30) after that date; the toggle is locked while resting, then
+switched back on automatically when the period ends (checked whenever the app
+is used, so it works even when a free host has put the app to sleep). Note
+that medical guidance for whole-blood donation is usually longer (around 3
+months) — adjust `DONATION_COOLDOWN_DAYS` if you want that. It relies on the
+date the donor enters.
+
+**Blocking (admin).** In the Admin Panel, *Block* locks an account out at once
+(even if they're logged in right now), removes them from search and the
+request board, and puts their email and mobile number on a block list so they
+can't register again — including `name+tag@gmail.com` / dotted-Gmail tricks and
+different phone formats. Deleting a blocked account doesn't lift the block.
+*Unblock*, or *Remove from list*, reverses it. Admins can't be blocked
+(revoke admin rights first).
 
 ---
 
@@ -175,6 +235,9 @@ replace ownership.
 | Method | Endpoint                              | Auth | Description |
 |--------|----------------------------------------|------|--------------|
 | POST   | `/api/auth/register`                    | –    | Register a donor or seeker account |
+| GET    | `/api/auth/verification-config`          | –    | Whether OTP verification is on, and real/demo mode per channel |
+| POST   | `/api/auth/send-otp`                     | –    | Send a 6-digit code to an email or mobile number |
+| POST   | `/api/auth/verify-otp`                   | –    | Check the code, returns a short-lived verification token |
 | POST   | `/api/auth/login`                       | –    | Log in, returns JWT |
 | GET    | `/api/auth/me`                          | JWT  | Restore session |
 | GET    | `/api/donors/search`                    | JWT  | Search donors by blood group / city / lat,lng |
@@ -193,6 +256,10 @@ replace ownership.
 | GET    | `/api/admin/users`                       | Admin| List every registered user |
 | GET    | `/api/admin/summary`                     | Admin| Platform-wide counts |
 | GET    | `/api/admin/requests`                    | Admin| Every emergency request ever posted |
+| PATCH  | `/api/admin/users/:id/block`             | Admin| Block a user (logs them out, hides them, blocks re-registration) |
+| PATCH  | `/api/admin/users/:id/unblock`           | Admin| Lift a block |
+| GET    | `/api/admin/blocked`                     | Admin| List blocked emails / mobile numbers |
+| DELETE | `/api/admin/blocked/:id`                 | Admin| Remove an entry from the block list |
 | DELETE | `/api/admin/users/:id`                   | Admin| Remove a user |
 
 ---

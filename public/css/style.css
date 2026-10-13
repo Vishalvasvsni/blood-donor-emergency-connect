@@ -22,7 +22,6 @@ body {
   background: var(--bg);
   color: var(--ink);
   line-height: 1.5;
-  padding-top: 64px;
 }
 
 a { color: var(--red); text-decoration: none; }
@@ -38,12 +37,9 @@ a:hover { text-decoration: underline; }
 .navbar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 50;
-  width: 100%;
 }
 .navbar .container {
   display: flex;
@@ -80,43 +76,6 @@ a:hover { text-decoration: underline; }
 }
 .nav-links .nav-cta:hover { background: var(--red-dark); color: var(--white); }
 .hamburger { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
-
-@media (max-width: 1200px) {
-  .navbar .container {
-    min-height: 64px;
-    gap: 12px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
-  .brand {
-    font-size: 1rem;
-    max-width: calc(100% - 52px);
-    line-height: 1.2;
-  }
-  .nav-links {
-    display: none;
-  }
-  .nav-links.open {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 64px;
-    left: 0;
-    right: 0;
-    max-height: calc(100vh - 64px);
-    overflow-y: auto;
-    background: white;
-    padding: 10px 20px 16px;
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.05);
-  }
-  .nav-links a, .nav-links button {
-    width: 100%;
-    text-align: left;
-    padding: 10px 12px;
-  }
-  .hamburger { display: block; }
-}
 
 /* Hero */
 .hero {
@@ -360,7 +319,33 @@ footer {
 @media (max-width: 640px) {
   .hero h1 { font-size: 1.8rem; }
   .form-grid-2 { grid-template-columns: 1fr; }
-  .brand { font-size: 0.92rem; }
+  .nav-links { display: none; }
+  .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: white; padding: 10px 20px 16px; border-bottom: 1px solid var(--border); }
+  .hamburger { display: block; }
   .donor-card { flex-direction: column; align-items: flex-start; }
   .donor-actions { width: 100%; justify-content: flex-start; }
 }
+
+/* --- OTP verification on the sign-up form --- */
+.verify-row { display: flex; gap: 8px; }
+.verify-row input { flex: 1; min-width: 0; }
+.verify-row .btn { white-space: nowrap; }
+.otp-box { display: none; gap: 8px; margin-top: 8px; }
+.otp-box.show { display: flex; }
+.otp-box input { flex: 1; min-width: 0; letter-spacing: 4px; }
+.verify-status { font-size: 0.82rem; margin-top: 6px; color: var(--muted); }
+.verify-status.ok { color: var(--green); font-weight: 700; }
+.verify-status.err { color: #9c2020; }
+.demo-note { background: #fff4d6; color: #7a5800; border: 1px solid #f0d58a; border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; margin-top: 8px; }
+.yesno { display: flex; gap: 10px; margin-top: 4px; }
+.yesno label { display: flex !important; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 8px; padding: 9px 16px; cursor: pointer; font-weight: 600; margin: 0 !important; }
+.yesno input { width: auto !important; }
+
+/* --- health chips + verified badge on donor cards --- */
+.chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+.chip-ok { background: #e9f7ee; color: var(--green); }
+.chip-warn { background: #fff4d6; color: var(--amber); }
+.chip-na { background: #f1f1f1; color: var(--muted); }
+.badge-verified { background: #e8f1ff; color: #1d4ed8; }
+.badge-blocked { background: #9c2020; color: #fff; }
+.cooldown-note { background: #fff4d6; color: #7a5800; border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; margin-bottom: 14px; }

@@ -15,4 +15,26 @@ services:
       - key: TURSO_AUTH_TOKEN
         sync: false   # you paste this in manually from your Turso dashboard
       - key: ADMIN_EMAIL
-        sync: false   # optional: the email you want promoted to admin
+        sync: false   # optional: the email(s) you want promoted to admin
+      - key: SALESFORCE_LOGIN_URL
+        sync: false   # optional: defaults to https://login.salesforce.com if unset
+      - key: SALESFORCE_CLIENT_ID
+        sync: false   # optional: enables Salesforce sync when set with the 3 below
+      - key: SALESFORCE_CLIENT_SECRET
+        sync: false
+      - key: SALESFORCE_USERNAME
+        sync: false
+      - key: SALESFORCE_PASSWORD
+        sync: false   # your Salesforce password + security token, concatenated
+      - key: BREVO_API_KEY
+        sync: false   # email OTP delivery (Brevo HTTPS API; free plan)
+      - key: EMAIL_FROM
+        sync: false   # a sender address you verified in Brevo
+      - key: FAST2SMS_API_KEY
+        sync: false   # SMS OTP (India) - or use the TWILIO_* variables instead
+      - key: OTP_DEV_MODE
+        sync: false   # "true" = demo mode (codes shown on screen, nothing sent)
+      - key: REQUIRE_VERIFICATION
+        sync: false   # set to "false" to switch verification off
+      - key: DONATION_COOLDOWN_DAYS
+        sync: false   # default 30

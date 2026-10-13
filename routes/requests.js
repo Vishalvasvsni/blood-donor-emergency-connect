@@ -3,6 +3,7 @@ const db = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { compatibleDonorGroupsFor, distanceKm, VALID_GROUPS } = require('../utils/blood');
 const asyncHandler = require('../utils/asyncHandler');
+const salesforce = require('../services/salesforce');
 
 const router = express.Router();
 
@@ -44,9 +45,25 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
 
   const created = await db.get('SELECT * FROM emergency_requests WHERE id = ?', [info.lastInsertRowid]);
 
+  // Best-effort sync to Salesforce as a Case, linked to the poster's Contact
+  // if they have one. Never lets a Salesforce problem fail the request post.
+  if (salesforce.SF_ENABLED) {
+    try {
+      const poster = await db.get('SELECT salesforce_contact_id FROM donors WHERE id = ?', [req.donorId]);
+      const caseId = await salesforce.createCase(created, poster ? poster.salesforce_contact_id : null);
+      if (caseId) {
+        await db.run('UPDATE emergency_requests SET salesforce_case_id = ? WHERE id = ?', [caseId, created.id]);
+        created.salesforce_case_id = caseId;
+      }
+    } catch (err) {
+      console.error('Salesforce case sync failed:', err.message);
+    }
+  }
+
   // Find matching compatible & active donors nearby to suggest to the requester
+  await db.releaseExpiredCooldowns();
   const compatibleGroups = compatibleDonorGroupsFor(blood_group);
-  let matches = (await db.all("SELECT * FROM donors WHERE is_active = 1 AND role = 'donor'"))
+  let matches = (await db.all("SELECT * FROM donors WHERE is_active = 1 AND role = 'donor' AND is_blocked = 0"))
     .filter((d) => compatibleGroups.includes(d.blood_group));
 
   matches = matches.map((d) => ({
@@ -68,7 +85,13 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
 // GET /api/requests — board of emergency requests. Requires login.
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const { status = 'open', blood_group, city } = req.query;
-  let rows = await db.all('SELECT * FROM emergency_requests ORDER BY created_at DESC');
+  // Requests posted by a blocked account are hidden from the board.
+  let rows = await db.all(
+    `SELECT r.* FROM emergency_requests r
+     LEFT JOIN donors d ON d.id = r.posted_by
+     WHERE d.is_blocked IS NULL OR d.is_blocked = 0
+     ORDER BY r.created_at DESC`
+  );
 
   if (status !== 'all') rows = rows.filter((r) => r.status === status);
   if (blood_group) rows = rows.filter((r) => r.blood_group === blood_group);
@@ -102,6 +125,15 @@ router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   }
 
   await db.run('UPDATE emergency_requests SET status = ? WHERE id = ?', [status, req.params.id]);
+
+  if (salesforce.SF_ENABLED && existing.salesforce_case_id) {
+    try {
+      await salesforce.updateCaseStatus(existing.salesforce_case_id, status);
+    } catch (err) {
+      console.error('Salesforce case status sync failed:', err.message);
+    }
+  }
+
   res.json({ message: 'Status updated.' });
 }));
 

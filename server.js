@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 
 const { initDb } = require('./config/db');
+const otp = require('./services/otp');
 
 const authRoutes = require('./routes/auth');
 const donorRoutes = require('./routes/donors');
@@ -11,6 +12,8 @@ const requestRoutes = require('./routes/requests');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
+// Behind Render's proxy, so req.ip is the real visitor (used for OTP rate limits)
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -44,6 +47,12 @@ app.use((err, req, res, next) => {
 
 async function start() {
   await initDb();
+  if (otp.DEV_MODE) {
+    console.warn('⚠️  OTP_DEV_MODE is ON: any channel without an email/SMS provider returns its OTP to the browser. Do not use this for real users.');
+  }
+  if (!otp.verificationRequired()) {
+    console.warn('⚠️  REQUIRE_VERIFICATION=false: new accounts are NOT being verified.');
+  }
   app.listen(PORT, () => {
     console.log(`🩸 Blood Donor Emergency Connect running at http://localhost:${PORT}`);
   });

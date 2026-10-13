@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>My Dashboard · Blood Donor Emergency Connect</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -38,14 +37,29 @@
             <option>O+</option><option>O-</option>
           </select>
         </div>
+        <div class="form-row">
+          <label>Do you have Sugar (diabetes)?</label>
+          <div class="yesno">
+            <label><input type="radio" name="bd_sugar" value="yes" /> Yes</label>
+            <label><input type="radio" name="bd_sugar" value="no" /> No</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Do you have BP (blood pressure) problems?</label>
+          <div class="yesno">
+            <label><input type="radio" name="bd_bp" value="yes" /> Yes</label>
+            <label><input type="radio" name="bd_bp" value="no" /> No</label>
+          </div>
+        </div>
         <button class="btn btn-primary btn-block btn-sm" id="becomeDonorBtn">Register as Donor</button>
       </div>
 
       <div class="card" style="margin-bottom:20px;" id="availabilityCard">
+        <div class="cooldown-note" id="cooldownNote" style="display:none;"></div>
         <div class="availability-toggle">
           <div>
             <strong id="statusLabel">Available</strong>
-            <div style="font-size:0.8rem; color:var(--muted);">Toggle off after you donate</div>
+            <div style="font-size:0.8rem; color:var(--muted);" id="toggleHint">Switch off any time you can't donate</div>
           </div>
           <label class="switch">
             <input type="checkbox" id="availabilityToggle" />
@@ -53,7 +67,7 @@
           </label>
         </div>
         <div class="form-row">
-          <label for="lastDonation">Last Donation Date <span class="hint">(optional)</span></label>
+          <label for="lastDonation">Last Donation Date <span class="hint">(you'll be hidden from search for <span id="cooldownDays">30</span> days after this date)</span></label>
           <input type="date" id="lastDonation" />
         </div>
         <button class="btn btn-primary btn-block btn-sm" id="saveAvailabilityBtn">Save</button>
@@ -81,7 +95,8 @@
           </div>
           <div class="form-row">
             <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" required />
+            <input type="tel" id="phone" readonly style="background:#f6f6f6;" />
+            <div class="hint" style="margin-top:4px;" id="verifiedHint"></div>
           </div>
         </div>
         <div class="form-grid-2">
@@ -112,6 +127,19 @@
             <label for="state">State</label>
             <input type="text" id="state" required />
           </div>
+        </div>
+        <div class="form-row" id="healthEditRow">
+          <label>Sugar (diabetes)</label>
+          <div class="yesno">
+            <label><input type="radio" name="p_sugar" value="yes" /> Yes</label>
+            <label><input type="radio" name="p_sugar" value="no" /> No</label>
+          </div>
+          <label style="margin-top:12px;">BP (blood pressure) problems</label>
+          <div class="yesno">
+            <label><input type="radio" name="p_bp" value="yes" /> Yes</label>
+            <label><input type="radio" name="p_bp" value="no" /> No</label>
+          </div>
+          <p class="hint" style="margin:8px 0 0;">Shown as Yes/No to people who search for donors.</p>
         </div>
         <div class="form-row">
           <label for="age">Age</label>
@@ -149,9 +177,7 @@
   </div>
 </div>
 
-<footer>
-  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
-</footer>
+<footer>Blood Donor Emergency Connect &middot; BCA Project Synopsis 2026-27</footer>
 
 <script src="/js/app.js"></script>
 <script>
@@ -159,6 +185,16 @@
   renderNavbar('dashboard');
 
   let currentLat = null, currentLng = null;
+
+  function setYesNo(name, value) {
+    document.querySelectorAll(`input[name="${name}"]`).forEach((r) => {
+      r.checked = (value === 1 && r.value === 'yes') || (value === 0 && r.value === 'no');
+    });
+  }
+  function getYesNo(name) {
+    const r = document.querySelector(`input[name="${name}"]:checked`);
+    return r ? r.value === 'yes' : null;
+  }
 
   function fillForm(donor) {
     document.getElementById('name').value = donor.name;
@@ -171,8 +207,33 @@
     document.getElementById('availabilityToggle').checked = !!donor.is_active;
     document.getElementById('statusLabel').textContent = donor.is_active ? 'Available' : 'Not Available';
     document.getElementById('lastDonation').value = donor.last_donation_date || '';
+    document.getElementById('cooldownDays').textContent = donor.cooldown_days || 30;
     currentLat = donor.latitude;
     currentLng = donor.longitude;
+
+    // After a recent donation the toggle is switched off and locked until the
+    // cool-down ends, when the server switches it back on automatically.
+    const note = document.getElementById('cooldownNote');
+    const toggle = document.getElementById('availabilityToggle');
+    if (donor.cooldown_active) {
+      note.style.display = 'block';
+      note.textContent = `Thank you for donating! You're hidden from search until ${donor.available_from} and will be listed again automatically.`;
+      toggle.disabled = true;
+      document.getElementById('toggleHint').textContent = 'Paused automatically after your last donation';
+    } else {
+      note.style.display = 'none';
+      toggle.disabled = false;
+      document.getElementById('toggleHint').textContent = "Switch off any time you can't donate";
+    }
+
+    setYesNo('p_sugar', donor.has_sugar);
+    setYesNo('p_bp', donor.has_bp);
+    document.getElementById('healthEditRow').style.display = donor.role === 'donor' ? 'block' : 'none';
+    const bits = [];
+    if (donor.email_verified) bits.push('email');
+    if (donor.phone_verified) bits.push('mobile');
+    document.getElementById('verifiedHint').textContent =
+      (bits.length ? '✔ Verified ' + bits.join(' & ') + '. ' : '') + "Your mobile number can't be changed here.";
 
     if (donor.role === 'seeker') {
       document.getElementById('becomeDonorCard').style.display = 'block';
@@ -231,11 +292,13 @@
     hideAlert('becomeDonorAlert');
     const bg = document.getElementById('becomeDonorGroup').value;
     if (!bg) return showAlert('becomeDonorAlert', 'Please select your blood group.');
+    const sugar = getYesNo('bd_sugar'), bp = getYesNo('bd_bp');
+    if (sugar === null || bp === null) return showAlert('becomeDonorAlert', 'Please answer both the Sugar and BP questions.');
     try {
       const { donor } = await api('/donors/me/become-donor', {
         method: 'PATCH',
         auth: true,
-        body: { blood_group: bg },
+        body: { blood_group: bg, has_sugar: sugar, has_bp: bp },
       });
       Auth.updateDonor(donor);
       fillForm(donor);
@@ -251,7 +314,7 @@
   document.getElementById('saveAvailabilityBtn').addEventListener('click', async () => {
     hideAlert('availAlert');
     try {
-      const { donor } = await api('/donors/me/availability', {
+      const { donor, message } = await api('/donors/me/availability', {
         method: 'PATCH',
         auth: true,
         body: {
@@ -260,7 +323,8 @@
         },
       });
       Auth.updateDonor(donor);
-      showAlert('availAlert', 'Availability updated!', 'success');
+      fillForm(donor);
+      showAlert('availAlert', message || 'Availability updated!', 'success');
     } catch (err) {
       showAlert('availAlert', err.message, 'error');
     }
@@ -286,7 +350,8 @@
         auth: true,
         body: {
           name: document.getElementById('name').value.trim(),
-          phone: document.getElementById('phone').value.trim(),
+          has_sugar: getYesNo('p_sugar'),
+          has_bp: getYesNo('p_bp'),
           blood_group: document.getElementById('blood_group').value,
           gender: document.getElementById('gender').value || null,
           city: document.getElementById('city').value.trim(),
@@ -297,6 +362,7 @@
         },
       });
       Auth.updateDonor(donor);
+      fillForm(donor);
       showAlert('profileSuccess', 'Profile updated successfully!', 'success');
     } catch (err) {
       showAlert('profileAlert', err.message, 'error');

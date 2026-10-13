@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Admin Panel · Blood Donor Emergency Connect</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -15,11 +14,28 @@
   <h2 style="margin-bottom:4px;">Admin Panel</h2>
   <p style="color:var(--muted); margin-top:0;">Everyone who has registered on the platform.</p>
 
-  <div class="stats-strip" id="summaryStrip" style="margin-top:0; margin-bottom:28px;">
+  <div class="stats-strip" id="summaryStrip" style="margin-top:0; margin-bottom:28px; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
     <div class="stat-card"><div class="num" id="sTotalUsers">—</div><div class="label">Total Users</div></div>
     <div class="stat-card"><div class="num" id="sTotalDonors">—</div><div class="label">Donors</div></div>
     <div class="stat-card"><div class="num" id="sActiveDonors">—</div><div class="label">Active Donors</div></div>
     <div class="stat-card"><div class="num" id="sTotalSeekers">—</div><div class="label">Seekers</div></div>
+    <div class="stat-card"><div class="num" id="sBlocked">—</div><div class="label">Blocked</div></div>
+  </div>
+
+  <div class="card" id="sfCard" style="margin-bottom:24px;">
+    <h3 style="margin-top:0;">Salesforce Integration</h3>
+    <div id="sfStatus" style="font-size:0.9rem; color:var(--muted);">Checking connection…</div>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" id="sfCheckBtn" type="button">Check Connection</button>
+      <button class="btn btn-secondary btn-sm" id="sfResyncBtn" type="button">Resync All Users Now</button>
+    </div>
+    <div id="sfResyncResult" style="margin-top:10px; font-size:0.85rem;"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <h3 style="margin-top:0;">Blocked emails &amp; mobile numbers</h3>
+    <p style="font-size:0.82rem; color:var(--muted); margin-top:-6px;">These can't log in or register again. Deleting a blocked account does not lift the block.</p>
+    <div id="blockedList" style="font-size:0.88rem;">Loading…</div>
   </div>
 
   <div class="search-bar">
@@ -49,9 +65,7 @@
   </div>
 </div>
 
-<footer>
-  Blood Donor Emergency Connect &middot; BCA Project &middot; Vivekanand Global University, Jaipur &middot; 2026
-</footer>
+<footer>Blood Donor Emergency Connect &middot; Admin Panel</footer>
 
 <script src="/js/app.js"></script>
 <script>
@@ -78,6 +92,7 @@
       document.getElementById('sTotalDonors').textContent = s.totalDonors;
       document.getElementById('sActiveDonors').textContent = s.activeDonors;
       document.getElementById('sTotalSeekers').textContent = s.totalSeekers;
+      document.getElementById('sBlocked').textContent = s.totalBlocked;
     } catch (e) { /* non-critical */ }
   }
 
@@ -98,6 +113,8 @@
             <th style="padding:10px 12px; font-size:0.8rem;">Role</th>
             <th style="padding:10px 12px; font-size:0.8rem;">Blood Group</th>
             <th style="padding:10px 12px; font-size:0.8rem;">City</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Verified</th>
+            <th style="padding:10px 12px; font-size:0.8rem;">Sugar / BP</th>
             <th style="padding:10px 12px; font-size:0.8rem;">Status</th>
             <th style="padding:10px 12px; font-size:0.8rem;">Joined</th>
             <th style="padding:10px 12px; font-size:0.8rem;"></th>
@@ -107,19 +124,26 @@
           ${users.map(u => `
             <tr style="border-top:1px solid var(--border);">
               <td style="padding:10px 12px; font-size:0.85rem;">#${u.id}</td>
-              <td style="padding:10px 12px; font-size:0.85rem; font-weight:600;">${u.name}${u.is_admin ? ' 👑' : ''}</td>
+              <td style="padding:10px 12px; font-size:0.85rem; font-weight:600;">${u.name}${u.is_admin ? ' 👑' : ''}${u.is_blocked ? ' <span class="badge badge-blocked">Blocked</span>' : ''}${u.is_blocked && u.blocked_reason ? `<div style="font-weight:400; font-size:0.75rem; color:var(--muted);">${u.blocked_reason}</div>` : ''}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.email}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.phone}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.role}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.blood_group || '—'}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.city}, ${u.state}</td>
-              <td style="padding:10px 12px; font-size:0.85rem;">${u.role === 'donor' ? (u.is_active ? '<span class="badge badge-active">Available</span>' : '<span class="badge badge-inactive">Inactive</span>') : '—'}</td>
+              <td style="padding:10px 12px; font-size:0.8rem; white-space:nowrap;">${u.email_verified ? '✔' : '✖'} email<br/>${u.phone_verified ? '✔' : '✖'} mobile</td>
+              <td style="padding:10px 12px; font-size:0.8rem; white-space:nowrap;">${u.role === 'donor' ? `${yn(u.has_sugar)} / ${yn(u.has_bp)}` : '—'}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${u.role === 'donor' ? (u.is_blocked ? '<span class="badge badge-blocked">Blocked</span>' : (u.is_active ? '<span class="badge badge-active">Available</span>' : (u.auto_paused ? `<span class="badge badge-inactive" title="Auto-paused after donation">Resting until ${u.cooldown_until}</span>` : '<span class="badge badge-inactive">Inactive</span>'))) : (u.is_blocked ? '<span class="badge badge-blocked">Blocked</span>' : '—')}</td>
               <td style="padding:10px 12px; font-size:0.8rem; color:var(--muted);">${u.created_at}</td>
-              <td style="padding:10px 12px; white-space:nowrap;">
+              <td style="padding:10px 12px;">
+                <div style="display:flex; gap:6px; flex-wrap:wrap; min-width:150px;">
                 ${u.is_admin
-                  ? (u.id === currentAdminId ? '' : `<button class="btn btn-sm demote-btn" style="background:#f1f1f1; color:var(--muted); margin-right:6px;" data-id="${u.id}" data-name="${u.name}">Revoke Admin</button>`)
-                  : `<button class="btn btn-sm promote-btn" style="background:#fff4d6; color:#a16207; margin-right:6px;" data-id="${u.id}" data-name="${u.name}">Make Admin</button>
+                  ? (u.id === currentAdminId ? '' : `<button class="btn btn-sm demote-btn" style="background:#f1f1f1; color:var(--muted);" data-id="${u.id}" data-name="${u.name}">Revoke Admin</button>`)
+                  : `${u.is_blocked
+                       ? `<button class="btn btn-sm unblock-btn" style="background:#e9f7ee; color:var(--green);" data-id="${u.id}" data-name="${u.name}">Unblock</button>`
+                       : `<button class="btn btn-sm block-btn" style="background:#9c2020; color:#fff;" data-id="${u.id}" data-name="${u.name}">Block</button>
+                          <button class="btn btn-sm promote-btn" style="background:#fff4d6; color:#a16207;" data-id="${u.id}" data-name="${u.name}">Make Admin</button>`}
                      <button class="btn btn-sm delete-btn" style="background:#fdeceb; color:#9c2020;" data-id="${u.id}" data-name="${u.name}">Delete</button>`}
+                </div>
               </td>
             </tr>
           `).join('')}
@@ -134,6 +158,27 @@
           await api(`/admin/users/${btn.dataset.id}`, { method: 'DELETE', auth: true });
           loadUsers();
           loadSummary();
+        } catch (err) { alert(err.message); }
+      });
+    });
+
+    wrap.querySelectorAll('.block-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const reason = prompt(`Block "${btn.dataset.name}"?\n\nThey will be logged out immediately and will not be able to log in or register again with this email or mobile number.\n\nOptional reason (only admins see this):`);
+        if (reason === null) return; // cancelled
+        try {
+          await api(`/admin/users/${btn.dataset.id}/block`, { method: 'PATCH', auth: true, body: { reason } });
+          loadUsers(); loadSummary(); loadBlocked();
+        } catch (err) { alert(err.message); }
+      });
+    });
+
+    wrap.querySelectorAll('.unblock-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Unblock "${btn.dataset.name}"? They'll be able to log in again.`)) return;
+        try {
+          await api(`/admin/users/${btn.dataset.id}/unblock`, { method: 'PATCH', auth: true });
+          loadUsers(); loadSummary(); loadBlocked();
         } catch (err) { alert(err.message); }
       });
     });
@@ -157,6 +202,29 @@
         } catch (err) { alert(err.message); }
       });
     });
+  }
+
+  function yn(v) { return v === 1 ? 'Yes' : v === 0 ? 'No' : '—'; }
+
+  async function loadBlocked() {
+    const el = document.getElementById('blockedList');
+    try {
+      const { blocked } = await api('/admin/blocked', { auth: true });
+      if (!blocked.length) { el.innerHTML = '<span style="color:var(--muted);">Nobody is blocked.</span>'; return; }
+      el.innerHTML = blocked.map((b) => `
+        <div class="log-item" style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+          <div>
+            <strong>${b.email_original || '—'}</strong> · ${b.phone_original || '—'}
+            <div style="color:var(--muted); font-size:0.78rem;">${b.reason ? b.reason + ' · ' : ''}blocked ${b.created_at}</div>
+          </div>
+          <button class="btn btn-sm remove-blocked" style="background:#e9f7ee; color:var(--green);" data-id="${b.id}">Remove from list</button>
+        </div>`).join('');
+      el.querySelectorAll('.remove-blocked').forEach((btn) => btn.addEventListener('click', async () => {
+        if (!confirm('Remove this email/number from the block list? That person (if their account still exists) will be unblocked.')) return;
+        try { await api(`/admin/blocked/${btn.dataset.id}`, { method: 'DELETE', auth: true }); loadBlocked(); loadUsers(); loadSummary(); }
+        catch (err) { alert(err.message); }
+      }));
+    } catch (err) { el.textContent = err.message; }
   }
 
   function applyFilters() {
@@ -183,8 +251,40 @@
   document.getElementById('roleFilter').addEventListener('change', applyFilters);
   document.getElementById('searchBox').addEventListener('input', applyFilters);
 
+  async function checkSalesforceStatus() {
+    const el = document.getElementById('sfStatus');
+    el.textContent = 'Checking connection…';
+    try {
+      const s = await api('/admin/salesforce-status', { auth: true });
+      if (!s.configured) {
+        el.innerHTML = '⚪ Not configured — set SALESFORCE_CLIENT_ID, SALESFORCE_CLIENT_SECRET, SALESFORCE_USERNAME, and SALESFORCE_PASSWORD to enable syncing.';
+      } else if (s.connected) {
+        el.innerHTML = `🟢 Connected to <strong>${s.instanceUrl}</strong> — new registrations and requests are syncing automatically.`;
+      } else {
+        el.innerHTML = `🔴 Configured but connection failed: ${s.error}`;
+      }
+    } catch (err) {
+      el.textContent = `Could not check status: ${err.message}`;
+    }
+  }
+
+  document.getElementById('sfCheckBtn').addEventListener('click', checkSalesforceStatus);
+
+  document.getElementById('sfResyncBtn').addEventListener('click', async () => {
+    const resultEl = document.getElementById('sfResyncResult');
+    resultEl.textContent = 'Resyncing all users to Salesforce…';
+    try {
+      const r = await api('/admin/salesforce-resync', { method: 'POST', auth: true });
+      resultEl.textContent = `Synced ${r.synced} of ${r.total} users.` + (r.errors.length ? ` ${r.errors.length} failed — check server logs for details.` : '');
+    } catch (err) {
+      resultEl.textContent = `Resync failed: ${err.message}`;
+    }
+  });
+
+  checkSalesforceStatus();
   loadSummary();
   loadUsers();
+  loadBlocked();
 </script>
 </body>
 </html>
