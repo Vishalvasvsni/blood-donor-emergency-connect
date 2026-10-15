@@ -8,6 +8,8 @@ const { phoneKey, isValidPhone, parseYesNo, ownView } = require('../utils/donor'
 const asyncHandler = require('../utils/asyncHandler');
 const salesforce = require('../services/salesforce');
 const otp = require('../services/otp');
+const firebase = require('../services/firebase');
+const phoneemail = require('../services/phoneemail');
 const blocklist = require('../services/blocklist');
 
 const router = express.Router();
@@ -81,14 +83,109 @@ function normaliseTarget(channel, target) {
 // GET /api/auth/verification-config — lets the sign-up page know whether
 // OTP verification is on and whether each channel is real or demo mode.
 router.get('/verification-config', (req, res) => {
+  const email = otp.channelMode('email');
+  const phone = otp.channelMode('phone');
   res.json({
     required: otp.verificationRequired(),
-    email: otp.channelMode('email'),
-    phone: otp.channelMode('phone'),
+    email,
+    phone,
+    // Public by design: these ship in every Firebase web app.
+    firebase: email === 'firebase' ? firebase.webConfig() : null,
+    // Public by design (it appears in the popup URL).
+    phone_email_client_id: phone === 'phoneemail' ? phoneemail.clientId() : null,
   });
 });
 
+// Shared by send-otp, precheck and Firebase verify: may this email / number
+// be used for a new account? Sends the error response itself and returns true
+// if not.
+async function rejectUnavailableContact(res, channel, key) {
+  const blockArgs = channel === 'email' ? { email: key } : { phone: key };
+  if (await blocklist.isContactBlocked(blockArgs)) {
+    res.status(403).json({ error: CONTACT_BLOCKED_MESSAGE, blocked: true });
+    return true;
+  }
+  const taken = channel === 'email'
+    ? await db.get('SELECT id FROM donors WHERE email = ?', [key])
+    : await db.get('SELECT id FROM donors WHERE phone_norm = ?', [key]);
+  if (taken) {
+    res.status(409).json({
+      error: channel === 'email'
+        ? 'An account with this email already exists. Please log in.'
+        : 'An account with this mobile number already exists. Please log in.',
+    });
+    return true;
+  }
+  return false;
+}
+
+// POST /api/auth/precheck  { channel, target }
+// Called BEFORE Firebase sends an SMS / email, so we never pay to text (or
+// email) a blocked or already-registered contact.
+router.post('/precheck', asyncHandler(async (req, res) => {
+  const { channel, target } = req.body || {};
+  const t = normaliseTarget(channel, target);
+  if (t.error) return res.status(400).json({ error: t.error });
+  if (ipLimited(req.ip)) {
+    return res.status(429).json({ error: 'Too many verification requests from this network. Please try again later.' });
+  }
+  if (await rejectUnavailableContact(res, channel, t.value)) return;
+  res.json({ ok: true, value: t.value });
+}));
+
+// POST /api/auth/firebase/verify  { id_token }   (email only)
+// The browser verified the email with Firebase; we check Google's signature on
+// the resulting ID token ourselves and read the verified email out of it.
+router.post('/firebase/verify', asyncHandler(async (req, res) => {
+  if (!firebase.enabledFor('email')) {
+    return res.status(400).json({ error: 'Firebase email verification is not enabled.' });
+  }
+  if (ipLimited(req.ip)) {
+    return res.status(429).json({ error: 'Too many verification requests from this network. Please try again later.' });
+  }
+
+  let email;
+  try {
+    const claims = await firebase.verifyIdToken(String((req.body || {}).id_token || ''));
+    email = firebase.emailFromClaims(claims);
+    if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
+  } catch (err) {
+    if (err instanceof firebase.ProofError) return res.status(err.status).json({ error: err.message });
+    console.error('Firebase token check failed:', err.message);
+    return res.status(502).json({ error: "We couldn't check the verification right now. Please try again in a moment." });
+  }
+
+  if (await rejectUnavailableContact(res, 'email', email)) return;
+  res.json({ verified: true, token: otp.issueToken('email', email), value: email });
+}));
+
+// POST /api/auth/phoneemail/verify  { access_token }   (mobile number only)
+// The Phone.Email popup returns an access token to the browser. We exchange it
+// with Phone.Email ourselves (server to server) to learn which number was
+// verified — the number the browser reports is never trusted.
+router.post('/phoneemail/verify', asyncHandler(async (req, res) => {
+  if (!phoneemail.enabledFor('phone')) {
+    return res.status(400).json({ error: 'Phone.Email verification is not enabled.' });
+  }
+  if (ipLimited(req.ip)) {
+    return res.status(429).json({ error: 'Too many verification requests from this network. Please try again later.' });
+  }
+
+  let phone;
+  try {
+    phone = await phoneemail.phoneFromAccessToken(String((req.body || {}).access_token || ''));
+  } catch (err) {
+    if (err instanceof phoneemail.ProofError) return res.status(err.status).json({ error: err.message });
+    console.error('Phone.Email request failed:', err.message);
+    return res.status(502).json({ error: "We couldn't reach the verification service. Please try again in a moment." });
+  }
+
+  if (await rejectUnavailableContact(res, 'phone', phone.key)) return;
+  res.json({ verified: true, token: otp.issueToken('phone', phone.key), value: phone.display });
+}));
+
 // POST /api/auth/send-otp  { channel: 'email'|'phone', target }
+// Used only when WE send the code (Brevo / Fast2SMS / Twilio, or demo mode).
 router.post('/send-otp', asyncHandler(async (req, res) => {
   const { channel, target } = req.body || {};
   if (!otp.verificationRequired()) {
@@ -97,21 +194,7 @@ router.post('/send-otp', asyncHandler(async (req, res) => {
   const t = normaliseTarget(channel, target);
   if (t.error) return res.status(400).json({ error: t.error });
 
-  const blockArgs = channel === 'email' ? { email: t.value } : { phone: t.value };
-  if (await blocklist.isContactBlocked(blockArgs)) {
-    return res.status(403).json({ error: CONTACT_BLOCKED_MESSAGE, blocked: true });
-  }
-
-  const taken = channel === 'email'
-    ? await db.get('SELECT id FROM donors WHERE email = ?', [t.value])
-    : await db.get('SELECT id FROM donors WHERE phone_norm = ?', [t.value]);
-  if (taken) {
-    return res.status(409).json({
-      error: channel === 'email'
-        ? 'An account with this email already exists. Please log in.'
-        : 'An account with this mobile number already exists. Please log in.',
-    });
-  }
+  if (await rejectUnavailableContact(res, channel, t.value)) return;
 
   if (ipLimited(req.ip)) {
     return res.status(429).json({ error: 'Too many verification requests from this network. Please try again later.' });

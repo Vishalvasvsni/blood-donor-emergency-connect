@@ -19,6 +19,8 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const { JWT_SECRET } = require('../middleware/auth');
 const { fetchWithTimeout } = require('../utils/http');
+const firebase = require('./firebase');
+const phoneemail = require('./phoneemail');
 
 const OTP_TTL_MIN = 10;
 const RESEND_COOLDOWN_SEC = 30;
@@ -41,8 +43,13 @@ function smsProvider() {
   return null;
 }
 
-// 'provider' = real delivery, 'dev' = demo mode, 'none' = not available
+// 'firebase' = email verified with a Firebase sign-in link, 'phoneemail' =
+// mobile verified in Phone.Email's popup (both checked by our server, never
+// trusting the browser), 'provider' = we send the code ourselves
+// (Brevo / Fast2SMS / Twilio), 'dev' = demo mode, 'none' = not available
 function channelMode(channel) {
+  if (firebase.enabledFor(channel)) return 'firebase';
+  if (phoneemail.enabledFor(channel)) return 'phoneemail';
   const configured = channel === 'email'
     ? !!(process.env.BREVO_API_KEY && process.env.EMAIL_FROM)
     : !!smsProvider();
@@ -103,6 +110,9 @@ async function sendSms(phone10, code) {
 // target = lower-cased email, or the 10-digit mobile number
 async function sendOtp(channel, target) {
   const mode = channelMode(channel);
+  if (mode === 'firebase' || mode === 'phoneemail') {
+    throw new OtpError(400, 'This is verified through its own button — a code is not sent by this route.');
+  }
   if (mode === 'none') {
     throw new OtpError(503, `${channel === 'email' ? 'Email' : 'Mobile'} verification isn't set up on this server yet. Please contact the administrator.`);
   }
@@ -159,6 +169,12 @@ async function verifyOtp(channel, target, code) {
   }
 
   await db.run('UPDATE otp_codes SET consumed = 1 WHERE id = ?', [row.id]);
+  return issueToken(channel, target);
+}
+
+// Proof that `target` (email, or 10-digit mobile number) was verified.
+// Registration requires one for the email and one for the mobile number.
+function issueToken(channel, target) {
   return jwt.sign({ purpose: 'contact-verify', channel, target }, JWT_SECRET, { expiresIn: '30m' });
 }
 
@@ -172,4 +188,4 @@ function isTokenValid(token, channel, target) {
   }
 }
 
-module.exports = { OtpError, DEV_MODE, verificationRequired, channelMode, sendOtp, verifyOtp, isTokenValid };
+module.exports = { OtpError, DEV_MODE, verificationRequired, channelMode, sendOtp, verifyOtp, issueToken, isTokenValid };

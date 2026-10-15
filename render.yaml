@@ -38,3 +38,13 @@ services:
         sync: false   # set to "false" to switch verification off
       - key: DONATION_COOLDOWN_DAYS
         sync: false   # default 30
+      - key: FIREBASE_API_KEY
+        sync: false   # email verification (free): from Firebase console -> web app config
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false   # optional
+      - key: PHONE_EMAIL_CLIENT_ID
+        sync: false   # mobile verification: Client ID from your Phone.Email dashboard

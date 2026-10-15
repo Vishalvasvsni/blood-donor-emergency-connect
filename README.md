@@ -230,6 +230,74 @@ different phone formats. Deleting a blocked account doesn't lift the block.
 
 ---
 
+## 5.7 Free verification: Firebase (email) + Phone.Email (mobile)
+
+This is the zero-cost way to run the sign-up verification. Each channel uses
+its own provider, and the server decides which applies (Firebase for email if
+its variables are set; Phone.Email for mobile if its Client ID is set;
+otherwise the older Brevo / Fast2SMS / Twilio / demo modes).
+
+**How it stays safe.** The browser never gets to say "this number/email is
+verified". Firebase's signed ID token (email) and Phone.Email's access token
+(mobile) are checked **on our server** — Google's signature for the former, a
+server-to-server call to Phone.Email for the latter. Only then does the server
+issue the proof that registration requires. Your real accounts and passwords
+stay in your own database; the throw-away Firebase account is deleted as soon
+as the check succeeds.
+
+### Email — Firebase (free on the Spark plan)
+1. Go to <https://console.firebase.google.com> → **Add project** (name it,
+   skip Google Analytics). Stay on the free **Spark** plan.
+2. **Build → Authentication → Get started → Sign-in method → Email/Password**:
+   switch on the first toggle (Email/Password) and **Save**. Leave
+   "Email link (passwordless)" OFF.
+3. **Project settings (gear icon) → General → Your apps → Web (`</>`)** →
+   register an app (any nickname, no hosting) → copy `apiKey`, `authDomain`,
+   `projectId` and `appId` from the config shown.
+4. **Authentication → Templates → Email address verification → edit (pencil)**:
+   change the wording so people know why they got it (e.g. "Verify your email
+   for Blood Donor Emergency Connect. Ignore this if you didn't ask for it").
+   Optional but recommended.
+5. **Authentication → Settings → Authorized domains → Add domain**: your
+   `<service>.onrender.com` address (harmless, avoids surprises).
+6. On **Render → your service → Environment** add `FIREBASE_API_KEY`,
+   `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_APP_ID` → Save.
+
+Limits (Firebase's published free-plan quotas): **1000 verification emails/day**.
+Don't use "Email link sign-in" instead — on the free plan that is capped at
+**5 emails/day**. Verification emails come from
+`noreply@<project>.firebaseapp.com` and often land in **Spam** — tell people to
+check there.
+
+### Mobile — Phone.Email
+1. Create an account at <https://www.phone.email> and open the dashboard.
+2. Copy your **Client ID** (shown in the dashboard; look under profile / the
+   "Sign in with Phone" button settings). If the dashboard asks for your
+   website or redirect URL, give it
+   `https://<service>.onrender.com/register.html`.
+3. On Render add `PHONE_EMAIL_CLIENT_ID` = that Client ID → Save.
+
+Cost, per Phone.Email's pricing page: **1000 free SMS per month for India for
+the first 6 months**; after that SMS to India is charged (about $0.14 each).
+When the free period ends, either top up a small balance, or switch mobile
+verification to Fast2SMS (set `FAST2SMS_API_KEY` and remove
+`PHONE_EMAIL_CLIENT_ID`). Only +91 numbers are accepted by default
+(`PHONE_EMAIL_COUNTRY_CODES`).
+
+### Known limitations (be upfront about these in your viva)
+- Email verification is "click the link we emailed", not a typed code. Someone
+  could trigger a verification email to an address they don't own; it only
+  counts if the real owner clicks it. The template wording in step 4 helps.
+- A verification started in one browser/device can't be continued from
+  another (the email shows "started elsewhere"). If someone is stuck: Firebase
+  console → Authentication → Users → delete the stale entry for that email.
+- Each mobile verification uses one SMS from the free quota, even if the
+  person then abandons sign-up.
+- Phone.Email and Firebase are third-party services; people's number/email
+  pass through them.
+
+---
+
 ## 6. API Reference (for evaluators / viva)
 
 | Method | Endpoint                              | Auth | Description |
@@ -238,6 +306,9 @@ different phone formats. Deleting a blocked account doesn't lift the block.
 | GET    | `/api/auth/verification-config`          | –    | Whether OTP verification is on, and real/demo mode per channel |
 | POST   | `/api/auth/send-otp`                     | –    | Send a 6-digit code to an email or mobile number |
 | POST   | `/api/auth/verify-otp`                   | –    | Check the code, returns a short-lived verification token |
+| POST   | `/api/auth/precheck`                     | –    | Is this email/number free to use? (called before Firebase sends anything) |
+| POST   | `/api/auth/firebase/verify`              | –    | Check a Firebase ID token for a verified email; returns a proof token |
+| POST   | `/api/auth/phoneemail/verify`            | –    | Exchange a Phone.Email access token for a verified mobile number; returns a proof token |
 | POST   | `/api/auth/login`                       | –    | Log in, returns JWT |
 | GET    | `/api/auth/me`                          | JWT  | Restore session |
 | GET    | `/api/donors/search`                    | JWT  | Search donors by blood group / city / lat,lng |
