@@ -1,1008 +1,580 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register · Blood Donor Emergency Connect</title>
-    <link rel="stylesheet" href="/css/style.css" />
-  </head>
-  <body>
-    <div id="navbar"></div>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Register · Blood Donor Emergency Connect</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
 
-    <div class="container">
-      <div class="form-wrap wide">
-        <h2>Create your account</h2>
-        <p class="subtitle">
-          Takes a couple of minutes. We verify your email and mobile number with
-          a one-time code.
-        </p>
+<div id="navbar"></div>
 
-        <div class="alert alert-error" id="formAlert"></div>
+<div class="container">
+  <div class="form-wrap wide">
+    <h2>Create your account</h2>
+    <p class="subtitle">Takes a couple of minutes. We verify your email and mobile number with a one-time code.</p>
 
-        <form id="registerForm" novalidate>
-          <div class="form-row">
-            <label>I want to:</label>
-            <div
-              style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap"
-            >
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 6px;
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  padding: 10px 14px;
-                  flex: 1;
-                  min-width: 200px;
-                  cursor: pointer;
-                "
-              >
-                <input
-                  type="radio"
-                  name="role"
-                  value="donor"
-                  checked
-                  style="width: auto"
-                />
-                🩸 Register as a Blood Donor
-              </label>
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 6px;
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  padding: 10px 14px;
-                  flex: 1;
-                  min-width: 200px;
-                  cursor: pointer;
-                "
-              >
-                <input
-                  type="radio"
-                  name="role"
-                  value="seeker"
-                  style="width: auto"
-                />
-                🔍 Just search / post requests
-              </label>
-            </div>
+    <div class="alert alert-error" id="formAlert"></div>
+
+    <form id="registerForm" novalidate>
+      <div class="form-row">
+        <label>I want to:</label>
+        <div style="display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
+            <input type="radio" name="role" value="donor" checked style="width:auto;" />
+            🩸 Register as a Blood Donor
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
+            <input type="radio" name="role" value="seeker" style="width:auto;" />
+            🔍 Just search / post requests
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required placeholder="e.g. Vishal Vaswani" />
+      </div>
+
+      <div class="form-row">
+        <label for="email">Email</label>
+        <div class="verify-row">
+          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email" />
+          <button type="button" class="btn btn-secondary btn-sm" id="emailSendBtn">Send OTP</button>
+        </div>
+        <div class="otp-box" id="emailOtpBox">
+          <input type="text" id="emailOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
+          <button type="button" class="btn btn-primary btn-sm" id="emailVerifyBtn">Verify</button>
+        </div>
+        <div class="verify-status" id="emailStatus"></div>
+        <button type="button" class="link-btn" id="emailChange" style="display:none;">Use a different email</button>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="phone">Mobile Number</label>
+          <div class="verify-row">
+            <input type="tel" id="phone" required placeholder="98765 43210" autocomplete="tel" />
+            <button type="button" class="btn btn-secondary btn-sm" id="phoneSendBtn">Send OTP</button>
+            <button type="button" class="btn btn-phemail btn-sm" id="phonePeBtn" style="display:none;">Verify mobile</button>
           </div>
-
-          <div class="form-row">
-            <label for="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              required
-              placeholder="e.g. Vishal Vaswani"
-            />
+          <div class="otp-box" id="phoneOtpBox">
+            <input type="text" id="phoneOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
+            <button type="button" class="btn btn-primary btn-sm" id="phoneVerifyBtn">Verify</button>
           </div>
-
-          <div class="form-row">
-            <label for="email">Email</label>
-            <div class="verify-row">
-              <input
-                type="email"
-                id="email"
-                required
-                placeholder="you@example.com"
-                autocomplete="email"
-              />
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                id="emailSendBtn"
-              >
-                Send OTP
-              </button>
-            </div>
-            <div class="otp-box" id="emailOtpBox">
-              <input
-                type="text"
-                id="emailOtp"
-                inputmode="numeric"
-                maxlength="6"
-                placeholder="6-digit code"
-                autocomplete="one-time-code"
-              />
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                id="emailVerifyBtn"
-              >
-                Verify
-              </button>
-            </div>
-            <div class="verify-status" id="emailStatus"></div>
-            <button
-              type="button"
-              class="link-btn"
-              id="emailChange"
-              style="display: none"
-            >
-              Use a different email
-            </button>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-row">
-              <label for="phone">Mobile Number</label>
-              <div class="verify-row">
-                <input
-                  type="tel"
-                  id="phone"
-                  required
-                  placeholder="98765 43210"
-                  autocomplete="tel"
-                />
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  id="phoneSendBtn"
-                >
-                  Send OTP
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-phemail btn-sm"
-                  id="phonePeBtn"
-                  style="display: none"
-                >
-                  Verify mobile
-                </button>
-              </div>
-              <div class="otp-box" id="phoneOtpBox">
-                <input
-                  type="text"
-                  id="phoneOtp"
-                  inputmode="numeric"
-                  maxlength="6"
-                  placeholder="6-digit code"
-                  autocomplete="one-time-code"
-                />
-                <button
-                  type="button"
-                  class="btn btn-primary btn-sm"
-                  id="phoneVerifyBtn"
-                >
-                  Verify
-                </button>
-              </div>
-              <div class="verify-status" id="phoneStatus"></div>
-              <!-- PHONE.EMAIL BUTTON (recommended): in your Phone.Email Admin Dashboard, generate the
+          <div class="verify-status" id="phoneStatus"></div>
+          <!-- PHONE.EMAIL BUTTON (recommended): in your Phone.Email Admin Dashboard, generate the
                "Sign in with Phone" button code and paste it between the two markers below.
                Leave the markers empty to use the built-in popup button instead. -->
-
-              <div
-                class="pe_signin_button"
-                data-client-id="17676216369379022034"
-              >
-                <script
-                  src="https://www.phone.email/sign_in_button_v1.js"
-                  async
-                ></script>
-              </div>
-
-              <script>
-                function phoneEmailListener(userObj) {
-                  var user_json_url = userObj.user_json_url;
-                  // Send user_json_url to your backend to retrieve user info (i.e. country code and phone number) from this URL.
-
-                  // Delete following code once you complete integration step 2.
-                  document
-                    .querySelector(".pe_signin_button")
-                    .insertAdjacentHTML(
-                      "beforeend",
-                      "<span>Phone Verification Successfull !! <br />Read following user_json_url from backend to get verified phone number - " +
-                        user_json_url +
-                        " <br /> Please delete this debug message code from phoneEmailListener function once you implement integration step 2.</span>",
-                    );
-                }
-              </script>
-
-              <div id="peButtonSlot" style="display: none; margin-top: 8px">
-                <!-- PASTE-PHONE-EMAIL-BUTTON-START -->
-                <!-- PASTE-PHONE-EMAIL-BUTTON-END -->
-              </div>
-              <button
-                type="button"
-                class="link-btn"
-                id="phoneChange"
-                style="display: none"
-              >
-                Use a different number
-              </button>
-            </div>
-            <div class="form-row" id="bloodGroupRow">
-              <label for="blood_group">Blood Group</label>
-              <select id="blood_group">
-                <option value="">Select</option>
-                <option>A+</option>
-                <option>A-</option>
-                <option>B+</option>
-                <option>B-</option>
-                <option>AB+</option>
-                <option>AB-</option>
-                <option>O+</option>
-                <option>O-</option>
-              </select>
-            </div>
+          <div id="peButtonSlot" style="display:none; margin-top:8px;">
+            <!-- PASTE-PHONE-EMAIL-BUTTON-START -->
+            <!-- PASTE-PHONE-EMAIL-BUTTON-END -->
           </div>
-
-          <div id="healthRow">
-            <div class="form-row">
-              <label>Do you have Sugar (diabetes)?</label>
-              <div class="yesno">
-                <label
-                  ><input type="radio" name="has_sugar" value="yes" />
-                  Yes</label
-                >
-                <label
-                  ><input type="radio" name="has_sugar" value="no" /> No</label
-                >
-              </div>
-            </div>
-            <div class="form-row">
-              <label>Do you have BP (blood pressure) problems?</label>
-              <div class="yesno">
-                <label
-                  ><input type="radio" name="has_bp" value="yes" /> Yes</label
-                >
-                <label
-                  ><input type="radio" name="has_bp" value="no" /> No</label
-                >
-              </div>
-              <p class="hint" style="margin: 8px 0 0">
-                Your Yes/No answers for Sugar and BP are shown to people who
-                search for donors, so they can pick a suitable donor.
-              </p>
-            </div>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-row">
-              <label for="city">City</label>
-              <input
-                type="text"
-                id="city"
-                required
-                placeholder="e.g. Jodhpur"
-              />
-            </div>
-            <div class="form-row">
-              <label for="state">State</label>
-              <input
-                type="text"
-                id="state"
-                required
-                placeholder="e.g. Rajasthan"
-              />
-            </div>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-row">
-              <label for="age">Age <span class="hint">(optional)</span></label>
-              <input
-                type="number"
-                id="age"
-                min="18"
-                max="65"
-                placeholder="18–65"
-              />
-            </div>
-            <div class="form-row">
-              <label for="gender"
-                >Gender <span class="hint">(optional)</span></label
-              >
-              <select id="gender">
-                <option value="">Prefer not to say</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <label>
-              <input
-                type="checkbox"
-                id="shareLocation"
-                checked
-                style="width: auto; margin-right: 6px"
-              />
-              Share my precise location for better proximity search
-              <span class="hint">(recommended)</span>
-            </label>
-          </div>
-
-          <div class="form-grid-2">
-            <div class="form-row">
-              <label for="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                required
-                minlength="6"
-                placeholder="At least 6 characters"
-                autocomplete="new-password"
-              />
-            </div>
-            <div class="form-row">
-              <label for="confirm_password">Confirm Password</label>
-              <input
-                type="password"
-                id="confirm_password"
-                required
-                minlength="6"
-                placeholder="Re-enter password"
-                autocomplete="new-password"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            class="btn btn-primary btn-block"
-            id="submitBtn"
-          >
-            Create Account
-          </button>
-        </form>
-
-        <p class="form-footer-link">
-          Already registered? <a href="/login.html">Log in</a>
-        </p>
+          <button type="button" class="link-btn" id="phoneChange" style="display:none;">Use a different number</button>
+        </div>
+        <div class="form-row" id="bloodGroupRow">
+          <label for="blood_group">Blood Group</label>
+          <select id="blood_group">
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <footer>
-      Blood Donor Emergency Connect &middot; BCA Project Synopsis 2026-27
-    </footer>
+      <div id="healthRow">
+        <div class="form-row">
+          <label>Do you have Sugar (diabetes)?</label>
+          <div class="yesno">
+            <label><input type="radio" name="has_sugar" value="yes" /> Yes</label>
+            <label><input type="radio" name="has_sugar" value="no" /> No</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Do you have BP (blood pressure) problems?</label>
+          <div class="yesno">
+            <label><input type="radio" name="has_bp" value="yes" /> Yes</label>
+            <label><input type="radio" name="has_bp" value="no" /> No</label>
+          </div>
+          <p class="hint" style="margin:8px 0 0;">Your Yes/No answers for Sugar and BP are shown to people who search for donors, so they can pick a suitable donor.</p>
+        </div>
+      </div>
 
-    <script src="/js/app.js"></script>
-    <script>
-      (async function main() {
-        if (Auth.isLoggedIn()) {
-          window.location.replace("/index.html");
-          return;
-        }
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="city">City</label>
+          <input type="text" id="city" required placeholder="e.g. Jodhpur" />
+        </div>
+        <div class="form-row">
+          <label for="state">State</label>
+          <input type="text" id="state" required placeholder="e.g. Rajasthan" />
+        </div>
+      </div>
 
-        // Phone.Email sends the person back to this page with ?access_token=... .
-        // If that happened inside the small popup we opened, hand the token to the
-        // original registration tab and close the popup.
-        const params = new URLSearchParams(window.location.search);
-        const accessToken = params.get("access_token");
-        if (accessToken && window.name === "peLoginWindow" && window.opener) {
-          try {
-            window.opener.postMessage(
-              { type: "bdec-pe-token", access_token: accessToken },
-              window.location.origin,
-            );
-            document.body.innerHTML =
-              '<p style="font-family:sans-serif;text-align:center;margin-top:60px;">Verified &#10004; You can close this window.</p>';
-            window.close();
-            return;
-          } catch (e) {
-            /* fall through and handle it in this window */
-          }
-        }
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="age">Age <span class="hint">(optional)</span></label>
+          <input type="number" id="age" min="18" max="65" placeholder="18–65" />
+        </div>
+        <div class="form-row">
+          <label for="gender">Gender <span class="hint">(optional)</span></label>
+          <select id="gender">
+            <option value="">Prefer not to say</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+      </div>
 
-        renderNavbar();
+      <div class="form-row">
+        <label>
+          <input type="checkbox" id="shareLocation" checked style="width:auto; margin-right:6px;" />
+          Share my precise location for better proximity search <span class="hint">(recommended)</span>
+        </label>
+      </div>
 
-        // The Phone.Email dashboard button calls this global function when the person
-        // has verified their number. (If the pasted code defines its own copy of it,
-        // this one — assigned after it in the page — takes over.)
-        window.phoneEmailListener = function (userObj) {
-          if (userObj && userObj.user_json_url)
-            finishPhoneEmail({ user_json_url: userObj.user_json_url });
-        };
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label for="password">Password</label>
+          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password" />
+        </div>
+        <div class="form-row">
+          <label for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" required minlength="6" placeholder="Re-enter password" autocomplete="new-password" />
+        </div>
+      </div>
 
-        const $ = (id) => document.getElementById(id);
-        const form = $("registerForm");
-        const submitBtn = $("submitBtn");
-        const DRAFT_KEY = "bdec_reg_draft";
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Create Account</button>
+    </form>
 
-        let verificationRequired = true;
-        let cfg = { email: "none", phone: "none" };
-        const modes = { email: "none", phone: "none" }; // firebase | phoneemail | provider | dev | none
-        const state = {
-          email: { token: null, timer: null },
-          phone: { token: null, timer: null },
-        };
-        let fb = null; // window.BDECFirebase once loaded
-        let fbPromise = null;
-        let pollTimer = null;
-        const pollMs = window.BDEC_POLL_MS || 3000;
+    <p class="form-footer-link">Already registered? <a href="/login.html">Log in</a></p>
+  </div>
+</div>
 
-        // ---------------- role toggle ----------------
-        function currentRole() {
-          return document.querySelector('input[name="role"]:checked').value;
-        }
-        function updateRoleUI() {
-          const donor = currentRole() === "donor";
-          $("healthRow").style.display = donor ? "block" : "none";
-          $("bloodGroupRow").style.opacity = donor ? "1" : "0.6";
-        }
-        document
-          .querySelectorAll('input[name="role"]')
-          .forEach((r) => r.addEventListener("change", updateRoleUI));
-        updateRoleUI();
+<footer>Blood Donor Emergency Connect &middot; BCA Project Synopsis 2026-27</footer>
 
-        // ---------------- shared helpers ----------------
-        function setStatus(channel, text, cls) {
-          const el = $(channel + "Status");
-          el.textContent = text || "";
-          el.className = "verify-status" + (cls ? " " + cls : "");
-        }
+<script src="/js/app.js"></script>
+<script>
+(async function main() {
+  if (Auth.isLoggedIn()) { window.location.replace('/index.html'); return; }
 
-        function startCooldown(channel, seconds) {
-          const btn = $(channel + "SendBtn");
-          let left = seconds;
-          clearInterval(state[channel].timer);
-          btn.disabled = true;
-          btn.textContent = `Resend (${left}s)`;
-          state[channel].timer = setInterval(() => {
-            left -= 1;
-            if (left <= 0) {
-              clearInterval(state[channel].timer);
-              btn.disabled = false;
-              btn.textContent = "Resend";
-            } else {
-              btn.textContent = `Resend (${left}s)`;
-            }
-          }, 1000);
-        }
+  // Phone.Email sends the person back to this page with ?access_token=... .
+  // If that happened inside the small popup we opened, hand the token to the
+  // original registration tab and close the popup.
+  const params = new URLSearchParams(window.location.search);
+  const accessToken = params.get('access_token');
+  if (accessToken && window.name === 'peLoginWindow' && window.opener) {
+    try {
+      window.opener.postMessage({ type: 'bdec-pe-token', access_token: accessToken }, window.location.origin);
+      document.body.innerHTML = '<p style="font-family:sans-serif;text-align:center;margin-top:60px;">Verified &#10004; You can close this window.</p>';
+      window.close();
+      return;
+    } catch (e) { /* fall through and handle it in this window */ }
+  }
 
-        // Did the admin paste the dashboard button into the slot? If so use it; otherwise our own button.
-        const peSlotUsed = !!document
-          .getElementById("peButtonSlot")
-          .querySelector("*");
-        function showPhoneEmailControl(show) {
-          $("peButtonSlot").style.display = show && peSlotUsed ? "" : "none";
-          $("phonePeBtn").style.display = show && !peSlotUsed ? "" : "none";
-        }
+  renderNavbar();
 
-        function markVerified(channel, token, value) {
-          state[channel].token = token;
-          $(channel).value = value;
-          $(channel).readOnly = true;
-          $(channel + "OtpBox").classList.remove("show");
-          clearInterval(state[channel].timer);
-          const btn = $(channel + "SendBtn");
-          btn.disabled = true;
-          btn.textContent = "Verified";
-          if (channel === "phone") showPhoneEmailControl(false);
-          setStatus(
-            channel,
-            `✔ ${channel === "email" ? "Email" : "Mobile number"} verified`,
-            "ok",
-          );
-          $(channel + "Change").style.display = "inline";
-        }
+  // The Phone.Email dashboard button calls this global function when the person
+  // has verified their number. (If the pasted code defines its own copy of it,
+  // this one — assigned after it in the page — takes over.)
+  window.phoneEmailListener = function (userObj) {
+    if (userObj && userObj.user_json_url) finishPhoneEmail({ user_json_url: userObj.user_json_url });
+  };
 
-        function resetVerification(channel) {
-          state[channel].token = null;
-          clearInterval(state[channel].timer);
-          $(channel + "OtpBox").classList.remove("show");
-          $(channel + "Otp").value = "";
-          $(channel + "Change").style.display = "none";
-          setStatus(channel, "");
-          const sendBtn = $(channel + "SendBtn");
-          sendBtn.disabled = false;
-          sendBtn.textContent =
-            channel === "email" && modes.email === "firebase"
-              ? "Send link"
-              : "Send OTP";
-          if (channel === "email") {
-            stopPolling();
-            if (modes.email === "firebase" && fb) fb.cancel(); // free the throw-away Firebase account
-            $("email").readOnly = false;
-          } else if (modes.phone === "phoneemail") {
-            $("phone").value = ""; // the number comes from the verify button
-            $("phone").readOnly = true;
-            sendBtn.style.display = "none";
-            showPhoneEmailControl(true);
-          } else {
-            $("phone").readOnly = false;
-          }
-        }
+  const $ = (id) => document.getElementById(id);
+  const form = $('registerForm');
+  const submitBtn = $('submitBtn');
+  const DRAFT_KEY = 'bdec_reg_draft';
 
-        ["email", "phone"].forEach((channel) => {
-          $(channel + "Change").addEventListener("click", () =>
-            resetVerification(channel),
-          );
-        });
+  let verificationRequired = true;
+  let cfg = { email: 'none', phone: 'none' };
+  const modes = { email: 'none', phone: 'none' };   // firebase | phoneemail | provider | dev | none
+  const state = {
+    email: { token: null, timer: null },
+    phone: { token: null, timer: null },
+  };
+  let fb = null;          // window.BDECFirebase once loaded
+  let fbPromise = null;
+  let pollTimer = null;
+  const pollMs = window.BDEC_POLL_MS || 3000;
 
-        // ---------------- form draft (only needed if Phone.Email reloads this page) ----------------
-        function saveDraft() {
-          const picked = (n) => {
-            const r = document.querySelector(`input[name="${n}"]:checked`);
-            return r ? r.value : "";
-          };
-          const draft = {
-            t: Date.now(),
-            role: currentRole(),
-            name: $("name").value,
-            email: $("email").value,
-            phone: $("phone").value,
-            blood_group: $("blood_group").value,
-            city: $("city").value,
-            state: $("state").value,
-            age: $("age").value,
-            gender: $("gender").value,
-            sugar: picked("has_sugar"),
-            bp: picked("has_bp"),
-            emailProof: state.email.token
-              ? { token: state.email.token, value: $("email").value }
-              : null,
-            phoneProof: state.phone.token
-              ? { token: state.phone.token, value: $("phone").value }
-              : null,
-          };
-          try {
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-          } catch (e) {
-            /* storage blocked */
-          }
-        }
-        function restoreDraft() {
-          let d = null;
-          try {
-            d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-          } catch (e) {
-            /* ignore */
-          }
-          if (!d || Date.now() - d.t > 30 * 60 * 1000) return;
-          const radio = (name, value) =>
-            document.querySelectorAll(`input[name="${name}"]`).forEach((r) => {
-              r.checked = r.value === value;
-            });
-          radio("role", d.role);
-          updateRoleUI();
-          ["name", "city", "state", "age", "gender", "blood_group"].forEach(
-            (k) => {
-              if (d[k]) $(k).value = d[k];
-            },
-          );
-          radio("has_sugar", d.sugar);
-          radio("has_bp", d.bp);
-          if (d.emailProof)
-            markVerified("email", d.emailProof.token, d.emailProof.value);
-          else if (d.email) $("email").value = d.email;
-          if (d.phoneProof)
-            markVerified("phone", d.phoneProof.token, d.phoneProof.value);
-        }
-        function clearDraft() {
-          try {
-            localStorage.removeItem(DRAFT_KEY);
-          } catch (e) {
-            /* ignore */
-          }
-        }
+  // ---------------- role toggle ----------------
+  function currentRole() { return document.querySelector('input[name="role"]:checked').value; }
+  function updateRoleUI() {
+    const donor = currentRole() === 'donor';
+    $('healthRow').style.display = donor ? 'block' : 'none';
+    $('bloodGroupRow').style.opacity = donor ? '1' : '0.6';
+  }
+  document.querySelectorAll('input[name="role"]').forEach((r) => r.addEventListener('change', updateRoleUI));
+  updateRoleUI();
 
-        // ---------------- OTP flow (only for the older "we send the code" / demo modes) ----------------
-        async function sendOtpFlow(channel) {
-          hideAlert("formAlert");
-          const target = $(channel).value.trim();
-          if (!target)
-            return setStatus(
-              channel,
-              `Enter your ${channel === "email" ? "email" : "mobile number"} first.`,
-              "err",
-            );
-          setStatus(channel, "Sending…");
-          $(channel + "SendBtn").disabled = true;
-          try {
-            const r = await api("/auth/send-otp", {
-              method: "POST",
-              body: { channel, target },
-            });
-            $(channel + "OtpBox").classList.add("show");
-            $(channel + "Otp").focus();
-            if (r.mode === "dev") {
-              $(channel + "Status").className = "verify-status";
-              $(channel + "Status").innerHTML =
-                `<div class="demo-note">DEMO MODE: nothing was sent. Your code is <strong>${r.dev_otp}</strong></div>`;
-            } else {
-              setStatus(
-                channel,
-                channel === "email"
-                  ? "Code sent — check your inbox (and spam folder)."
-                  : "Code sent by SMS.",
-              );
-            }
-            startCooldown(channel, 30);
-          } catch (err) {
-            $(channel + "SendBtn").disabled = false;
-            setStatus(channel, err.message, "err");
-          }
-        }
-        async function verifyOtpFlow(channel) {
-          const code = $(channel + "Otp").value.trim();
-          if (!/^\d{6}$/.test(code))
-            return setStatus(channel, "Enter the 6-digit code.", "err");
-          $(channel + "VerifyBtn").disabled = true;
-          try {
-            const r = await api("/auth/verify-otp", {
-              method: "POST",
-              body: { channel, target: $(channel).value.trim(), code },
-            });
-            markVerified(channel, r.token, $(channel).value.trim());
-          } catch (err) {
-            setStatus(channel, err.message, "err");
-          } finally {
-            $(channel + "VerifyBtn").disabled = false;
-          }
-        }
+  // ---------------- shared helpers ----------------
+  function setStatus(channel, text, cls) {
+    const el = $(channel + 'Status');
+    el.textContent = text || '';
+    el.className = 'verify-status' + (cls ? ' ' + cls : '');
+  }
 
-        // ---------------- EMAIL via Firebase (verification link) ----------------
-        function firebaseMessage(err) {
-          const map = {
-            "bdec/started-elsewhere":
-              "A verification for this email was already started from another browser or device. Finish it there, or ask the site administrator to clear it.",
-            "auth/invalid-email": "That email address does not look valid.",
-            "auth/operation-not-allowed":
-              "Email sign-up is not switched on in Firebase yet (Authentication → Sign-in method → Email/Password).",
-            "auth/too-many-requests":
-              "Too many attempts. Please wait a few minutes and try again.",
-            "auth/network-request-failed":
-              "Network problem. Please check your connection and try again.",
-            "auth/quota-exceeded":
-              "Today's free email limit has been reached. Please try again tomorrow.",
-            "auth/invalid-credential":
-              "Could not continue the earlier verification. Use a different email, or try again later.",
-            "auth/user-disabled":
-              "This verification was disabled. Please contact the administrator.",
-          };
-          return (
-            map[err && err.code] ||
-            (err && err.message) ||
-            "Something went wrong. Please try again."
-          );
-        }
+  function startCooldown(channel, seconds) {
+    const btn = $(channel + 'SendBtn');
+    let left = seconds;
+    clearInterval(state[channel].timer);
+    btn.disabled = true;
+    btn.textContent = `Resend (${left}s)`;
+    state[channel].timer = setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(state[channel].timer);
+        btn.disabled = false;
+        btn.textContent = 'Resend';
+      } else {
+        btn.textContent = `Resend (${left}s)`;
+      }
+    }, 1000);
+  }
 
-        function stopPolling() {
-          if (pollTimer) {
-            clearInterval(pollTimer);
-            pollTimer = null;
-          }
-        }
+  // Did the admin paste the dashboard button into the slot? If so use it; otherwise our own button.
+  const peSlotUsed = !!document.getElementById('peButtonSlot').querySelector('*');
+  function showPhoneEmailControl(show) {
+    $('peButtonSlot').style.display = show && peSlotUsed ? '' : 'none';
+    $('phonePeBtn').style.display = show && !peSlotUsed ? '' : 'none';
+  }
 
-        async function completeFirebaseEmail(idToken) {
-          try {
-            const r = await api("/auth/firebase/verify", {
-              method: "POST",
-              body: { id_token: idToken },
-            });
-            markVerified("email", r.token, r.value);
-            fb.finish();
-          } catch (err) {
-            setStatus("email", err.message, "err");
-            $("emailSendBtn").disabled = false;
-            $("emailSendBtn").textContent = "Send link";
-          }
-        }
+  function markVerified(channel, token, value) {
+    state[channel].token = token;
+    $(channel).value = value;
+    $(channel).readOnly = true;
+    $(channel + 'OtpBox').classList.remove('show');
+    clearInterval(state[channel].timer);
+    const btn = $(channel + 'SendBtn');
+    btn.disabled = true; btn.textContent = 'Verified';
+    if (channel === 'phone') showPhoneEmailControl(false);
+    setStatus(channel, `✔ ${channel === 'email' ? 'Email' : 'Mobile number'} verified`, 'ok');
+    $(channel + 'Change').style.display = 'inline';
+  }
 
-        function startPolling() {
-          stopPolling();
-          const startedAt = Date.now();
-          pollTimer = setInterval(async () => {
-            if (Date.now() - startedAt > 30 * 60 * 1000) {
-              stopPolling();
-              return;
-            }
-            try {
-              const idToken = await fb.checkVerified();
-              if (idToken) {
-                stopPolling();
-                await completeFirebaseEmail(idToken);
-              }
-            } catch (e) {
-              /* keep waiting; transient network errors are fine */
-            }
-          }, pollMs);
-        }
+  function resetVerification(channel) {
+    state[channel].token = null;
+    clearInterval(state[channel].timer);
+    $(channel + 'OtpBox').classList.remove('show');
+    $(channel + 'Otp').value = '';
+    $(channel + 'Change').style.display = 'none';
+    setStatus(channel, '');
+    const sendBtn = $(channel + 'SendBtn');
+    sendBtn.disabled = false;
+    sendBtn.textContent = (channel === 'email' && modes.email === 'firebase') ? 'Send link' : 'Send OTP';
+    if (channel === 'email') {
+      stopPolling();
+      if (modes.email === 'firebase' && fb) fb.cancel();   // free the throw-away Firebase account
+      $('email').readOnly = false;
+    } else if (modes.phone === 'phoneemail') {
+      $('phone').value = '';                                   // the number comes from the verify button
+      $('phone').readOnly = true;
+      sendBtn.style.display = 'none';
+      showPhoneEmailControl(true);
+    } else {
+      $('phone').readOnly = false;
+    }
+  }
 
-        async function sendFirebaseEmail() {
-          hideAlert("formAlert");
-          const email = $("email").value.trim().toLowerCase();
-          if (!email)
-            return setStatus("email", "Enter your email first.", "err");
-          setStatus("email", "Sending…");
-          $("emailSendBtn").disabled = true;
-          try {
-            await api("/auth/precheck", {
-              method: "POST",
-              body: { channel: "email", target: email },
-            });
-            if (!fb) fb = await fbPromise;
-            const r = await fb.startEmailVerification(email);
-            if (r.verified) {
-              setStatus("email", "Checking…");
-              return completeFirebaseEmail(await fb.checkVerified());
-            }
-            $("email").readOnly = true;
-            $("emailChange").style.display = "inline";
-            setStatus(
-              "email",
-              `We sent a verification email to ${email}. Click the link inside it (check Spam too), then come back to this page — it will update by itself.`,
-            );
-            startCooldown("email", 60);
-            startPolling();
-          } catch (err) {
-            $("emailSendBtn").disabled = false;
-            setStatus("email", firebaseMessage(err), "err");
-          }
-        }
+  ['email', 'phone'].forEach((channel) => {
+    $(channel + 'Change').addEventListener('click', () => resetVerification(channel));
+  });
 
-        function loadFirebase(config) {
-          return new Promise((resolve, reject) => {
-            const ready = () => {
-              window.BDECFirebase.init(config);
-              resolve(window.BDECFirebase);
-            };
-            if (window.BDECFirebase) return ready();
-            const timer = setTimeout(
-              () => reject(new Error("Could not load the Firebase service.")),
-              15000,
-            );
-            window.addEventListener(
-              "bdec-firebase-ready",
-              () => {
-                clearTimeout(timer);
-                ready();
-              },
-              { once: true },
-            );
-            const s = document.createElement("script");
-            s.type = "module";
-            s.src = "/js/firebase-verify.js";
-            s.onerror = () => {
-              clearTimeout(timer);
-              reject(new Error("Could not load the Firebase service."));
-            };
-            document.head.appendChild(s);
-          });
-        }
+  // ---------------- form draft (only needed if Phone.Email reloads this page) ----------------
+  function saveDraft() {
+    const picked = (n) => { const r = document.querySelector(`input[name="${n}"]:checked`); return r ? r.value : ''; };
+    const draft = {
+      t: Date.now(), role: currentRole(),
+      name: $('name').value, email: $('email').value, phone: $('phone').value,
+      blood_group: $('blood_group').value, city: $('city').value, state: $('state').value,
+      age: $('age').value, gender: $('gender').value, sugar: picked('has_sugar'), bp: picked('has_bp'),
+      emailProof: state.email.token ? { token: state.email.token, value: $('email').value } : null,
+      phoneProof: state.phone.token ? { token: state.phone.token, value: $('phone').value } : null,
+    };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) { /* storage blocked */ }
+  }
+  function restoreDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { /* ignore */ }
+    if (!d || Date.now() - d.t > 30 * 60 * 1000) return;
+    const radio = (name, value) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) => { r.checked = r.value === value; });
+    radio('role', d.role); updateRoleUI();
+    ['name', 'city', 'state', 'age', 'gender', 'blood_group'].forEach((k) => { if (d[k]) $(k).value = d[k]; });
+    radio('has_sugar', d.sugar); radio('has_bp', d.bp);
+    if (d.emailProof) markVerified('email', d.emailProof.token, d.emailProof.value);
+    else if (d.email) $('email').value = d.email;
+    if (d.phoneProof) markVerified('phone', d.phoneProof.token, d.phoneProof.value);
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ } }
 
-        // ---------------- MOBILE via Phone.Email (popup) ----------------
-        // proof is an access-token string (popup flow) or { user_json_url } (dashboard button)
-        async function finishPhoneEmail(proof) {
-          setStatus("phone", "Checking your verification…");
-          try {
-            const body =
-              typeof proof === "string" ? { access_token: proof } : proof;
-            const r = await api("/auth/phoneemail/verify", {
-              method: "POST",
-              body,
-            });
-            markVerified("phone", r.token, r.value);
-          } catch (err) {
-            setStatus("phone", err.message, "err");
-            showPhoneEmailControl(true);
-          }
-        }
+  // ---------------- OTP flow (only for the older "we send the code" / demo modes) ----------------
+  async function sendOtpFlow(channel) {
+    hideAlert('formAlert');
+    const target = $(channel).value.trim();
+    if (!target) return setStatus(channel, `Enter your ${channel === 'email' ? 'email' : 'mobile number'} first.`, 'err');
+    setStatus(channel, 'Sending…');
+    $(channel + 'SendBtn').disabled = true;
+    try {
+      const r = await api('/auth/send-otp', { method: 'POST', body: { channel, target } });
+      $(channel + 'OtpBox').classList.add('show');
+      $(channel + 'Otp').focus();
+      if (r.mode === 'dev') {
+        $(channel + 'Status').className = 'verify-status';
+        $(channel + 'Status').innerHTML = `<div class="demo-note">DEMO MODE: nothing was sent. Your code is <strong>${r.dev_otp}</strong></div>`;
+      } else {
+        setStatus(channel, channel === 'email' ? 'Code sent — check your inbox (and spam folder).' : 'Code sent by SMS.');
+      }
+      startCooldown(channel, 30);
+    } catch (err) {
+      $(channel + 'SendBtn').disabled = false;
+      setStatus(channel, err.message, 'err');
+    }
+  }
+  async function verifyOtpFlow(channel) {
+    const code = $(channel + 'Otp').value.trim();
+    if (!/^\d{6}$/.test(code)) return setStatus(channel, 'Enter the 6-digit code.', 'err');
+    $(channel + 'VerifyBtn').disabled = true;
+    try {
+      const r = await api('/auth/verify-otp', { method: 'POST', body: { channel, target: $(channel).value.trim(), code } });
+      markVerified(channel, r.token, $(channel).value.trim());
+    } catch (err) {
+      setStatus(channel, err.message, 'err');
+    } finally {
+      $(channel + 'VerifyBtn').disabled = false;
+    }
+  }
 
-        $("phonePeBtn").addEventListener("click", () => {
-          hideAlert("formAlert");
-          saveDraft();
-          // Same format as Phone.Email's own sample code (no percent-encoding of redirect_url).
-          const authUrl =
-            "https://www.phone.email/auth/log-in?client_id=" +
-            cfg.phone_email_client_id +
-            "&redirect_url=" +
-            window.location.origin +
-            "/register.html";
-          const w = 520,
-            h = 640;
-          const popup = window.open(
-            authUrl,
-            "peLoginWindow",
-            `width=${w},height=${h},left=${Math.max(0, (screen.width - w) / 2)},top=${Math.max(0, (screen.height - h) / 2)},scrollbars=yes`,
-          );
-          if (!popup) {
-            window.location.href = authUrl;
-            return;
-          } // popup blocked: do it in this tab
-          setStatus("phone", "Finish verifying in the Phone.Email window…");
-        });
+  // ---------------- EMAIL via Firebase (verification link) ----------------
+  function firebaseMessage(err) {
+    const map = {
+      'bdec/started-elsewhere': 'A verification for this email was already started from another browser or device. Finish it there, or ask the site administrator to clear it.',
+      'auth/invalid-email': 'That email address does not look valid.',
+      'auth/operation-not-allowed': 'Email sign-up is not switched on in Firebase yet (Authentication → Sign-in method → Email/Password).',
+      'auth/too-many-requests': 'Too many attempts. Please wait a few minutes and try again.',
+      'auth/network-request-failed': 'Network problem. Please check your connection and try again.',
+      'auth/quota-exceeded': "Today's free email limit has been reached. Please try again tomorrow.",
+      'auth/invalid-credential': 'Could not continue the earlier verification. Use a different email, or try again later.',
+      'auth/user-disabled': 'This verification was disabled. Please contact the administrator.',
+    };
+    return map[err && err.code] || (err && err.message) || 'Something went wrong. Please try again.';
+  }
 
-        window.addEventListener("message", (ev) => {
-          if (
-            ev.origin !== window.location.origin ||
-            !ev.data ||
-            ev.data.type !== "bdec-pe-token"
-          )
-            return;
-          finishPhoneEmail(ev.data.access_token);
-        });
+  function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
-        // ---------------- wire up the Send / Verify buttons ----------------
-        $("emailSendBtn").addEventListener("click", () =>
-          modes.email === "firebase"
-            ? sendFirebaseEmail()
-            : sendOtpFlow("email"),
-        );
-        $("phoneSendBtn").addEventListener("click", () => sendOtpFlow("phone"));
-        $("emailVerifyBtn").addEventListener("click", () =>
-          verifyOtpFlow("email"),
-        );
-        $("phoneVerifyBtn").addEventListener("click", () =>
-          verifyOtpFlow("phone"),
-        );
+  async function completeFirebaseEmail(idToken) {
+    try {
+      const r = await api('/auth/firebase/verify', { method: 'POST', body: { id_token: idToken } });
+      markVerified('email', r.token, r.value);
+      fb.finish();
+    } catch (err) {
+      setStatus('email', err.message, 'err');
+      $('emailSendBtn').disabled = false;
+      $('emailSendBtn').textContent = 'Send link';
+    }
+  }
 
-        // Editing a field after verifying means it has to be verified again.
-        ["email", "phone"].forEach((channel) => {
-          $(channel).addEventListener("input", () => {
-            if (
-              state[channel].token ||
-              $(channel + "OtpBox").classList.contains("show")
-            )
-              resetVerification(channel);
-          });
-        });
+  function startPolling() {
+    stopPolling();
+    const startedAt = Date.now();
+    pollTimer = setInterval(async () => {
+      if (Date.now() - startedAt > 30 * 60 * 1000) { stopPolling(); return; }
+      try {
+        const idToken = await fb.checkVerified();
+        if (idToken) { stopPolling(); await completeFirebaseEmail(idToken); }
+      } catch (e) { /* keep waiting; transient network errors are fine */ }
+    }, pollMs);
+  }
 
-        // ---------------- load server settings ----------------
-        try {
-          cfg = await api("/auth/verification-config");
-        } catch (e) {
-          /* keep defaults; the server enforces regardless */
-        }
-        verificationRequired = cfg.required !== false;
-        modes.email = cfg.email;
-        modes.phone = cfg.phone;
+  async function sendFirebaseEmail() {
+    hideAlert('formAlert');
+    const email = $('email').value.trim().toLowerCase();
+    if (!email) return setStatus('email', 'Enter your email first.', 'err');
+    setStatus('email', 'Sending…');
+    $('emailSendBtn').disabled = true;
+    try {
+      await api('/auth/precheck', { method: 'POST', body: { channel: 'email', target: email } });
+      if (!fb) fb = await fbPromise;
+      const r = await fb.startEmailVerification(email);
+      if (r.verified) {
+        setStatus('email', 'Checking…');
+        return completeFirebaseEmail(await fb.checkVerified());
+      }
+      $('email').readOnly = true;
+      $('emailChange').style.display = 'inline';
+      setStatus('email', `We sent a verification email to ${email}. Click the link inside it (check Spam too), then come back to this page — it will update by itself.`);
+      startCooldown('email', 60);
+      startPolling();
+    } catch (err) {
+      $('emailSendBtn').disabled = false;
+      setStatus('email', firebaseMessage(err), 'err');
+    }
+  }
 
-        if (!verificationRequired) {
-          ["email", "phone"].forEach((c) => {
-            $(c + "SendBtn").style.display = "none";
-          });
-        } else {
-          if (modes.email === "firebase") {
-            $("emailSendBtn").textContent = "Send link";
-            fbPromise = loadFirebase(cfg.firebase);
-            fbPromise.catch((e) => setStatus("email", e.message, "err"));
-          }
-          if (modes.phone === "phoneemail") {
-            $("phoneSendBtn").style.display = "none";
-            showPhoneEmailControl(true);
-            $("phone").readOnly = true;
-            $("phone").placeholder = peSlotUsed
-              ? "Use the Phone.Email button below →"
-              : 'Tap "Verify mobile" →';
-          }
-          if (modes.email === "none" || modes.phone === "none") {
-            showAlert(
-              "formAlert",
-              "Sign-up is temporarily unavailable: email/mobile verification has not been set up on this server yet. Please contact the site administrator.",
-            );
-          } else if (modes.email === "dev" || modes.phone === "dev") {
-            const which = [
-              modes.email === "dev" ? "email" : null,
-              modes.phone === "dev" ? "mobile" : null,
-            ]
-              .filter(Boolean)
-              .join(" and ");
-            showAlert(
-              "formAlert",
-              `Demo mode: ${which} verification codes will be shown on screen instead of being sent.`,
-              "success",
-            );
-          }
-        }
+  function loadFirebase(config) {
+    return new Promise((resolve, reject) => {
+      const ready = () => { window.BDECFirebase.init(config); resolve(window.BDECFirebase); };
+      if (window.BDECFirebase) return ready();
+      const timer = setTimeout(() => reject(new Error('Could not load the Firebase service.')), 15000);
+      window.addEventListener('bdec-firebase-ready', () => { clearTimeout(timer); ready(); }, { once: true });
+      const s = document.createElement('script');
+      s.type = 'module'; s.src = '/js/firebase-verify.js';
+      s.onerror = () => { clearTimeout(timer); reject(new Error('Could not load the Firebase service.')); };
+      document.head.appendChild(s);
+    });
+  }
 
-        // ---------------- returning from Phone.Email / reloaded mid-verification ----------------
-        if (accessToken && modes.phone === "phoneemail") {
-          history.replaceState(null, "", window.location.pathname);
-          restoreDraft();
-          await finishPhoneEmail(accessToken);
-        }
-        if (modes.email === "firebase" && fbPromise && !state.email.token) {
-          try {
-            fb = await fbPromise;
-            const pending = await fb.restore();
-            if (pending) {
-              $("email").value = pending;
-              $("email").readOnly = true;
-              $("emailChange").style.display = "inline";
-              setStatus(
-                "email",
-                `Waiting for you to click the verification link we emailed to ${pending}…`,
-              );
-              $("emailSendBtn").textContent = "Resend";
-              startPolling();
-            }
-          } catch (e) {
-            /* the status line already explains a load failure */
-          }
-        }
+  // ---------------- MOBILE via Phone.Email (popup) ----------------
+  // proof is an access-token string (popup flow) or { user_json_url } (dashboard button)
+  async function finishPhoneEmail(proof) {
+    setStatus('phone', 'Checking your verification…');
+    try {
+      const body = typeof proof === 'string' ? { access_token: proof } : proof;
+      const r = await api('/auth/phoneemail/verify', { method: 'POST', body });
+      markVerified('phone', r.token, r.value);
+    } catch (err) {
+      setStatus('phone', err.message, 'err');
+      showPhoneEmailControl(true);
+    }
+  }
 
-        // ---------------- submit ----------------
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          if (e.submitter && e.submitter.id !== "submitBtn") return; // ignore stray widget buttons
-          hideAlert("formAlert");
+  $('phonePeBtn').addEventListener('click', () => {
+    hideAlert('formAlert');
+    saveDraft();
+    // Same format as Phone.Email's own sample code (no percent-encoding of redirect_url).
+    const authUrl = 'https://www.phone.email/auth/log-in?client_id=' + cfg.phone_email_client_id +
+      '&redirect_url=' + window.location.origin + '/register.html';
+    const w = 520, h = 640;
+    const popup = window.open(authUrl, 'peLoginWindow',
+      `width=${w},height=${h},left=${Math.max(0, (screen.width - w) / 2)},top=${Math.max(0, (screen.height - h) / 2)},scrollbars=yes`);
+    if (!popup) { window.location.href = authUrl; return; }   // popup blocked: do it in this tab
+    setStatus('phone', 'Finish verifying in the Phone.Email window…');
+  });
 
-          const role = currentRole();
-          const required = [
-            "name",
-            "email",
-            "phone",
-            "city",
-            "state",
-            "password",
-          ];
-          if (required.some((id) => !$(id).value.trim()))
-            return showAlert(
-              "formAlert",
-              "Please fill in all required fields.",
-            );
-          if (role === "donor" && !$("blood_group").value)
-            return showAlert("formAlert", "Please select your blood group.");
+  window.addEventListener('message', (ev) => {
+    if (ev.origin !== window.location.origin || !ev.data || ev.data.type !== 'bdec-pe-token') return;
+    finishPhoneEmail(ev.data.access_token);
+  });
 
-          const sugar = document.querySelector(
-            'input[name="has_sugar"]:checked',
-          );
-          const bp = document.querySelector('input[name="has_bp"]:checked');
-          if (role === "donor" && (!sugar || !bp))
-            return showAlert(
-              "formAlert",
-              "Please answer both the Sugar and BP questions.",
-            );
+  // ---------------- wire up the Send / Verify buttons ----------------
+  $('emailSendBtn').addEventListener('click', () => (modes.email === 'firebase' ? sendFirebaseEmail() : sendOtpFlow('email')));
+  $('phoneSendBtn').addEventListener('click', () => sendOtpFlow('phone'));
+  $('emailVerifyBtn').addEventListener('click', () => verifyOtpFlow('email'));
+  $('phoneVerifyBtn').addEventListener('click', () => verifyOtpFlow('phone'));
 
-          if ($("password").value !== $("confirm_password").value)
-            return showAlert("formAlert", "Passwords do not match.");
-          if (verificationRequired && !state.email.token)
-            return showAlert("formAlert", "Please verify your email first.");
-          if (verificationRequired && !state.phone.token)
-            return showAlert(
-              "formAlert",
-              "Please verify your mobile number first.",
-            );
+  // Editing a field after verifying means it has to be verified again.
+  ['email', 'phone'].forEach((channel) => {
+    $(channel).addEventListener('input', () => {
+      if (state[channel].token || $(channel + 'OtpBox').classList.contains('show')) resetVerification(channel);
+    });
+  });
 
-          submitBtn.disabled = true;
-          submitBtn.textContent = "Creating account…";
+  // ---------------- load server settings ----------------
+  try {
+    cfg = await api('/auth/verification-config');
+  } catch (e) { /* keep defaults; the server enforces regardless */ }
+  verificationRequired = cfg.required !== false;
+  modes.email = cfg.email; modes.phone = cfg.phone;
 
-          let coords = null;
-          if ($("shareLocation").checked) coords = await getBrowserLocation();
+  if (!verificationRequired) {
+    ['email', 'phone'].forEach((c) => { $(c + 'SendBtn').style.display = 'none'; });
+  } else {
+    if (modes.email === 'firebase') {
+      $('emailSendBtn').textContent = 'Send link';
+      fbPromise = loadFirebase(cfg.firebase);
+      fbPromise.catch((e) => setStatus('email', e.message, 'err'));
+    }
+    if (modes.phone === 'phoneemail') {
+      $('phoneSendBtn').style.display = 'none';
+      showPhoneEmailControl(true);
+      $('phone').readOnly = true;
+      $('phone').placeholder = peSlotUsed ? 'Use the Phone.Email button below →' : 'Tap "Verify mobile" →';
+    }
+    if (modes.email === 'none' || modes.phone === 'none') {
+      showAlert('formAlert', 'Sign-up is temporarily unavailable: email/mobile verification has not been set up on this server yet. Please contact the site administrator.');
+    } else if (modes.email === 'dev' || modes.phone === 'dev') {
+      const which = [modes.email === 'dev' ? 'email' : null, modes.phone === 'dev' ? 'mobile' : null].filter(Boolean).join(' and ');
+      showAlert('formAlert', `Demo mode: ${which} verification codes will be shown on screen instead of being sent.`, 'success');
+    }
+  }
 
-          try {
-            const payload = {
-              name: $("name").value.trim(),
-              email: $("email").value.trim(),
-              password: $("password").value,
-              phone: $("phone").value.trim(),
-              role,
-              blood_group: $("blood_group").value || null,
-              has_sugar: sugar ? sugar.value === "yes" : null,
-              has_bp: bp ? bp.value === "yes" : null,
-              email_token: state.email.token,
-              phone_token: state.phone.token,
-              city: $("city").value.trim(),
-              state: $("state").value.trim(),
-              age: $("age").value || null,
-              gender: $("gender").value || null,
-              latitude: coords ? coords.lat : null,
-              longitude: coords ? coords.lng : null,
-            };
-            const data = await api("/auth/register", {
-              method: "POST",
-              body: payload,
-            });
-            clearDraft();
-            Auth.setSession(data.token, data.donor);
-            window.location.href = "/index.html";
-          } catch (err) {
-            showAlert("formAlert", err.message);
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Create Account";
-          }
-        });
-      })();
-    </script>
-  </body>
+  // ---------------- returning from Phone.Email / reloaded mid-verification ----------------
+  if (accessToken && modes.phone === 'phoneemail') {
+    history.replaceState(null, '', window.location.pathname);
+    restoreDraft();
+    await finishPhoneEmail(accessToken);
+  }
+  if (modes.email === 'firebase' && fbPromise && !state.email.token) {
+    try {
+      fb = await fbPromise;
+      const pending = await fb.restore();
+      if (pending) {
+        $('email').value = pending; $('email').readOnly = true;
+        $('emailChange').style.display = 'inline';
+        setStatus('email', `Waiting for you to click the verification link we emailed to ${pending}…`);
+        $('emailSendBtn').textContent = 'Resend';
+        startPolling();
+      }
+    } catch (e) { /* the status line already explains a load failure */ }
+  }
+
+  // ---------------- submit ----------------
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (e.submitter && e.submitter.id !== 'submitBtn') return;   // ignore stray widget buttons
+    hideAlert('formAlert');
+
+    const role = currentRole();
+    const required = ['name', 'email', 'phone', 'city', 'state', 'password'];
+    if (required.some((id) => !$(id).value.trim())) return showAlert('formAlert', 'Please fill in all required fields.');
+    if (role === 'donor' && !$('blood_group').value) return showAlert('formAlert', 'Please select your blood group.');
+
+    const sugar = document.querySelector('input[name="has_sugar"]:checked');
+    const bp = document.querySelector('input[name="has_bp"]:checked');
+    if (role === 'donor' && (!sugar || !bp)) return showAlert('formAlert', 'Please answer both the Sugar and BP questions.');
+
+    if ($('password').value !== $('confirm_password').value) return showAlert('formAlert', 'Passwords do not match.');
+    if (verificationRequired && !state.email.token) return showAlert('formAlert', 'Please verify your email first.');
+    if (verificationRequired && !state.phone.token) return showAlert('formAlert', 'Please verify your mobile number first.');
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating account…';
+
+    let coords = null;
+    if ($('shareLocation').checked) coords = await getBrowserLocation();
+
+    try {
+      const payload = {
+        name: $('name').value.trim(),
+        email: $('email').value.trim(),
+        password: $('password').value,
+        phone: $('phone').value.trim(),
+        role,
+        blood_group: $('blood_group').value || null,
+        has_sugar: sugar ? sugar.value === 'yes' : null,
+        has_bp: bp ? bp.value === 'yes' : null,
+        email_token: state.email.token,
+        phone_token: state.phone.token,
+        city: $('city').value.trim(),
+        state: $('state').value.trim(),
+        age: $('age').value || null,
+        gender: $('gender').value || null,
+        latitude: coords ? coords.lat : null,
+        longitude: coords ? coords.lng : null,
+      };
+      const data = await api('/auth/register', { method: 'POST', body: payload });
+      clearDraft();
+      Auth.setSession(data.token, data.donor);
+      window.location.href = '/index.html';
+    } catch (err) {
+      showAlert('formAlert', err.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Account';
+    }
+  });
+})();
+</script>
+</body>
 </html>
