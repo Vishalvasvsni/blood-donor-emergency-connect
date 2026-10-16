@@ -64,6 +64,13 @@
             <button type="button" class="btn btn-primary btn-sm" id="phoneVerifyBtn">Verify</button>
           </div>
           <div class="verify-status" id="phoneStatus"></div>
+          <!-- PHONE.EMAIL BUTTON (recommended): in your Phone.Email Admin Dashboard, generate the
+               "Sign in with Phone" button code and paste it between the two markers below.
+               Leave the markers empty to use the built-in popup button instead. -->
+          <div id="peButtonSlot" style="display:none; margin-top:8px;">
+            <!-- PASTE-PHONE-EMAIL-BUTTON-START -->
+            <!-- PASTE-PHONE-EMAIL-BUTTON-END -->
+          </div>
           <button type="button" class="link-btn" id="phoneChange" style="display:none;">Use a different number</button>
         </div>
         <div class="form-row" id="bloodGroupRow">
@@ -169,6 +176,13 @@
 
   renderNavbar();
 
+  // The Phone.Email dashboard button calls this global function when the person
+  // has verified their number. (If the pasted code defines its own copy of it,
+  // this one — assigned after it in the page — takes over.)
+  window.phoneEmailListener = function (userObj) {
+    if (userObj && userObj.user_json_url) finishPhoneEmail({ user_json_url: userObj.user_json_url });
+  };
+
   const $ = (id) => document.getElementById(id);
   const form = $('registerForm');
   const submitBtn = $('submitBtn');
@@ -221,6 +235,13 @@
     }, 1000);
   }
 
+  // Did the admin paste the dashboard button into the slot? If so use it; otherwise our own button.
+  const peSlotUsed = !!document.getElementById('peButtonSlot').querySelector('*');
+  function showPhoneEmailControl(show) {
+    $('peButtonSlot').style.display = show && peSlotUsed ? '' : 'none';
+    $('phonePeBtn').style.display = show && !peSlotUsed ? '' : 'none';
+  }
+
   function markVerified(channel, token, value) {
     state[channel].token = token;
     $(channel).value = value;
@@ -229,7 +250,7 @@
     clearInterval(state[channel].timer);
     const btn = $(channel + 'SendBtn');
     btn.disabled = true; btn.textContent = 'Verified';
-    if (channel === 'phone') $('phonePeBtn').style.display = 'none';
+    if (channel === 'phone') showPhoneEmailControl(false);
     setStatus(channel, `✔ ${channel === 'email' ? 'Email' : 'Mobile number'} verified`, 'ok');
     $(channel + 'Change').style.display = 'inline';
   }
@@ -252,7 +273,7 @@
       $('phone').value = '';                                   // the number comes from the verify button
       $('phone').readOnly = true;
       sendBtn.style.display = 'none';
-      $('phonePeBtn').style.display = '';
+      showPhoneEmailControl(true);
     } else {
       $('phone').readOnly = false;
     }
@@ -406,22 +427,25 @@
   }
 
   // ---------------- MOBILE via Phone.Email (popup) ----------------
-  async function finishPhoneEmail(token) {
+  // proof is an access-token string (popup flow) or { user_json_url } (dashboard button)
+  async function finishPhoneEmail(proof) {
     setStatus('phone', 'Checking your verification…');
     try {
-      const r = await api('/auth/phoneemail/verify', { method: 'POST', body: { access_token: token } });
+      const body = typeof proof === 'string' ? { access_token: proof } : proof;
+      const r = await api('/auth/phoneemail/verify', { method: 'POST', body });
       markVerified('phone', r.token, r.value);
     } catch (err) {
       setStatus('phone', err.message, 'err');
-      $('phonePeBtn').style.display = '';
+      showPhoneEmailControl(true);
     }
   }
 
   $('phonePeBtn').addEventListener('click', () => {
     hideAlert('formAlert');
     saveDraft();
-    const authUrl = 'https://www.phone.email/auth/log-in?client_id=' + encodeURIComponent(cfg.phone_email_client_id) +
-      '&redirect_url=' + encodeURIComponent(window.location.origin + '/register.html');
+    // Same format as Phone.Email's own sample code (no percent-encoding of redirect_url).
+    const authUrl = 'https://www.phone.email/auth/log-in?client_id=' + cfg.phone_email_client_id +
+      '&redirect_url=' + window.location.origin + '/register.html';
     const w = 520, h = 640;
     const popup = window.open(authUrl, 'peLoginWindow',
       `width=${w},height=${h},left=${Math.max(0, (screen.width - w) / 2)},top=${Math.max(0, (screen.height - h) / 2)},scrollbars=yes`);
@@ -464,9 +488,9 @@
     }
     if (modes.phone === 'phoneemail') {
       $('phoneSendBtn').style.display = 'none';
-      $('phonePeBtn').style.display = '';
+      showPhoneEmailControl(true);
       $('phone').readOnly = true;
-      $('phone').placeholder = 'Tap "Verify mobile" →';
+      $('phone').placeholder = peSlotUsed ? 'Use the Phone.Email button below →' : 'Tap "Verify mobile" →';
     }
     if (modes.email === 'none' || modes.phone === 'none') {
       showAlert('formAlert', 'Sign-up is temporarily unavailable: email/mobile verification has not been set up on this server yet. Please contact the site administrator.');

@@ -33,6 +33,12 @@
   </div>
 
   <div class="card" style="margin-bottom:24px;">
+    <h3 style="margin-top:0;">Phone.Email (mobile verification)</h3>
+    <div id="peStatus" style="font-size:0.88rem; color:var(--muted);">Press "Run check" if mobile verification shows "You are not authorized".</div>
+    <button class="btn btn-secondary btn-sm" id="peCheckBtn" type="button" style="margin-top:10px;">Run check</button>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
     <h3 style="margin-top:0;">Blocked emails &amp; mobile numbers</h3>
     <p style="font-size:0.82rem; color:var(--muted); margin-top:-6px;">These can't log in or register again. Deleting a blocked account does not lift the block.</p>
     <div id="blockedList" style="font-size:0.88rem;">Loading…</div>
@@ -250,6 +256,22 @@
   document.getElementById('refreshBtn').addEventListener('click', () => { loadUsers(); loadSummary(); });
   document.getElementById('roleFilter').addEventListener('change', applyFilters);
   document.getElementById('searchBox').addEventListener('input', applyFilters);
+
+  document.getElementById('peCheckBtn').addEventListener('click', async () => {
+    const el = document.getElementById('peStatus');
+    el.textContent = 'Checking…';
+    try {
+      const r = await api('/admin/phoneemail-status', { auth: true });
+      if (!r.configured) { el.textContent = 'PHONE_EMAIL_CLIENT_ID is not set on this server, so Phone.Email is not in use.'; return; }
+      const probe = r.probe.reachable ? `Phone.Email replied (HTTP ${r.probe.httpStatus}): ${r.probe.body}` : `Could not reach Phone.Email: ${r.probe.error}`;
+      el.innerHTML = [
+        `<strong>Client ID this server uses:</strong> ${r.clientIdMasked} (${r.clientIdLength} characters)${r.hadStrayCharacters ? ' — <em>stray spaces/quotes were found and ignored; fix the value in Render</em>' : ''}`,
+        `<strong>Compare it</strong> with Client ID in your Phone.Email dashboard → Profile Details. They must match exactly.`,
+        `<strong>Website address to register in the dashboard, if it asks:</strong> ${r.siteAddress} (return page: ${r.registerPage})`,
+        `<strong>${probe.replace(/</g, '&lt;')}</strong>`,
+      ].join('<br/>');
+    } catch (err) { el.textContent = err.message; }
+  });
 
   async function checkSalesforceStatus() {
     const el = document.getElementById('sfStatus');

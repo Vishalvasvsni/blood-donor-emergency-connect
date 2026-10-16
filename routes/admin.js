@@ -4,6 +4,7 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const salesforce = require('../services/salesforce');
 const blocklist = require('../services/blocklist');
+const phoneemail = require('../services/phoneemail');
 
 const router = express.Router();
 
@@ -129,6 +130,27 @@ router.delete('/blocked/:id', requireAuth, requireAdmin, asyncHandler(async (req
   res.json({ message: 'Removed from the block list.' });
 }));
 
+
+// GET /api/admin/phoneemail-status — helps debug "You are not authorized" in the
+// Phone.Email popup: shows which Client ID this server is really using (masked),
+// the address to register in the Phone.Email dashboard, and how Phone.Email's
+// API reacts to that Client ID right now.
+router.get('/phoneemail-status', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  if (!phoneemail.enabledFor('phone')) {
+    return res.json({ configured: false });
+  }
+  const id = phoneemail.clientId();
+  const raw = process.env.PHONE_EMAIL_CLIENT_ID || '';
+  res.json({
+    configured: true,
+    clientIdMasked: id.length > 8 ? `${id.slice(0, 4)}…${id.slice(-4)}` : '(very short — is this the right value?)',
+    clientIdLength: id.length,
+    hadStrayCharacters: raw !== id,   // spaces / quotes were trimmed off
+    siteAddress: `${req.protocol}://${req.get('host')}`,
+    registerPage: `${req.protocol}://${req.get('host')}/register.html`,
+    probe: await phoneemail.probe(),
+  });
+}));
 
 // GET /api/admin/salesforce-status — quick way to verify the Salesforce
 // connection is configured correctly, without needing to register a test

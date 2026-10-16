@@ -270,12 +270,20 @@ Don't use "Email link sign-in" instead — on the free plan that is capped at
 check there.
 
 ### Mobile — Phone.Email
-1. Create an account at <https://www.phone.email> and open the dashboard.
-2. Copy your **Client ID** (shown in the dashboard; look under profile / the
-   "Sign in with Phone" button settings). If the dashboard asks for your
-   website or redirect URL, give it
-   `https://<service>.onrender.com/register.html`.
-3. On Render add `PHONE_EMAIL_CLIENT_ID` = that Client ID → Save.
+1. Create an account at <https://www.phone.email> and sign in to the **Admin
+   Dashboard** (<https://admin.phone.email>).
+2. In **Profile Details**, set your **business name** (Phone.Email puts it in
+   every OTP message) and copy your **Client ID**. Make sure the dashboard
+   shows the free plan active.
+3. On Render add `PHONE_EMAIL_CLIENT_ID` = that Client ID (no spaces or
+   quotes) → Save.
+4. **Recommended:** in the dashboard generate the **"Sign in with Phone"
+   button code** (the "Single Button" option) and paste it into
+   `public/register.html` between the two `PASTE-PHONE-EMAIL-BUTTON` markers
+   in the mobile-number section. Leave the markers empty to use the built-in
+   popup button instead. If the pasted code contains its own
+   `phoneEmailListener` function, leave it — the page replaces it. Commit and
+   push.
 
 Cost, per Phone.Email's pricing page: **1000 free SMS per month for India for
 the first 6 months**; after that SMS to India is charged (about $0.14 each).
@@ -283,6 +291,29 @@ When the free period ends, either top up a small balance, or switch mobile
 verification to Fast2SMS (set `FAST2SMS_API_KEY` and remove
 `PHONE_EMAIL_CLIENT_ID`). Only +91 numbers are accepted by default
 (`PHONE_EMAIL_COUNTRY_CODES`).
+
+#### Troubleshooting: the Phone.Email window says "You are not authorized"
+That message comes from Phone.Email's own page, so it is almost always an
+account/setting problem rather than a bug in this site. Work through these in
+order:
+1. **Use a clean browser window.** If the popup "automatically takes another
+   number", you're signed in to Phone.Email in that browser. Open a private /
+   incognito window (or sign out of phone.email) and try again.
+2. **Try Phone.Email's own demo** (<https://www.phone.email/demo-login>) with
+   the same other number. If the demo also says "not authorized", the problem is
+   your Phone.Email account, not this site: finish the dashboard profile
+   (business name), confirm the free plan is active, and contact Phone.Email
+   (Contact us / WhatsApp on their Integration Docs page).
+3. **Check the Client ID** — Admin Panel → *Phone.Email → Run check* shows the
+   Client ID this server is really using (masked) and flags stray spaces or
+   quotes. It must match **Profile Details** in the dashboard exactly.
+4. **Register your site address.** If the dashboard has a website / domain /
+   redirect setting, enter your Render address (*Run check* shows exactly what
+   to enter).
+5. **Use the dashboard-generated button** (step 4 above) instead of the
+   built-in popup button.
+6. *Run check* also shows Phone.Email's raw reply to the server; send that to
+   Phone.Email support if the steps above don't fix it.
 
 ### Known limitations (be upfront about these in your viva)
 - Email verification is "click the link we emailed", not a typed code. Someone

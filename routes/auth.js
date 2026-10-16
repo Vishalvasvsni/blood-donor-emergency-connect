@@ -159,10 +159,11 @@ router.post('/firebase/verify', asyncHandler(async (req, res) => {
   res.json({ verified: true, token: otp.issueToken('email', email), value: email });
 }));
 
-// POST /api/auth/phoneemail/verify  { access_token }   (mobile number only)
-// The Phone.Email popup returns an access token to the browser. We exchange it
-// with Phone.Email ourselves (server to server) to learn which number was
-// verified — the number the browser reports is never trusted.
+// POST /api/auth/phoneemail/verify  { access_token }  or  { user_json_url }   (mobile only)
+// Phone.Email hands the browser either an access token (popup flow) or a link
+// to a small JSON file (dashboard button). We ask Phone.Email ourselves (server
+// to server) which number was verified — the number the browser reports is
+// never trusted.
 router.post('/phoneemail/verify', asyncHandler(async (req, res) => {
   if (!phoneemail.enabledFor('phone')) {
     return res.status(400).json({ error: 'Phone.Email verification is not enabled.' });
@@ -173,7 +174,10 @@ router.post('/phoneemail/verify', asyncHandler(async (req, res) => {
 
   let phone;
   try {
-    phone = await phoneemail.phoneFromAccessToken(String((req.body || {}).access_token || ''));
+    const { access_token, user_json_url } = req.body || {};
+    phone = access_token
+      ? await phoneemail.phoneFromAccessToken(String(access_token))
+      : await phoneemail.phoneFromJsonUrl(String(user_json_url || ''));
   } catch (err) {
     if (err instanceof phoneemail.ProofError) return res.status(err.status).json({ error: err.message });
     console.error('Phone.Email request failed:', err.message);
