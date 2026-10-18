@@ -97,6 +97,7 @@ async function initDb() {
         blocked_at      TEXT,
         blocked_reason  TEXT,
         salesforce_contact_id TEXT,
+        password_changed_at INTEGER,
         created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -178,6 +179,7 @@ async function initDb() {
     blocked_reason: 'TEXT',
     auto_paused: 'INTEGER NOT NULL DEFAULT 0',
     cooldown_until: 'TEXT',
+    password_changed_at: 'INTEGER',   // seconds; sessions older than this are signed out
   };
   for (const [name, definition] of Object.entries(donorMigrations)) {
     if (!donorColumns.includes(name)) {

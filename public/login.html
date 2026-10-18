@@ -26,6 +26,7 @@
         <label for="password">Password</label>
         <input type="password" id="password" required placeholder="Your password" />
       </div>
+      <div class="forgot-link"><a href="/forgot-password.html">Forgot your password?</a></div>
       <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Log In</button>
     </form>
 
@@ -41,7 +42,8 @@
   renderNavbar();
 
   const qs = new URLSearchParams(window.location.search);
-  if (qs.get('blocked')) showAlert('formAlert', 'Your account has been blocked by the administrator.');
+  if (qs.get('reset')) showAlert('formAlert', 'Your password was changed. Please log in with your new password.', 'success');
+  else if (qs.get('blocked')) showAlert('formAlert', 'Your account has been blocked by the administrator.');
   else if (qs.get('expired')) showAlert('formAlert', 'Your session has ended. Please log in again.');
 
   document.getElementById('loginForm').addEventListener('submit', async (e) => {

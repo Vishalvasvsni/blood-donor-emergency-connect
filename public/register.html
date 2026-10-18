@@ -18,63 +18,70 @@
     <div class="alert alert-error" id="formAlert"></div>
 
     <form id="registerForm" novalidate>
-      <div class="form-row">
-        <label>I want to:</label>
-        <div style="display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
-            <input type="radio" name="role" value="donor" checked style="width:auto;" />
-            🩸 Register as a Blood Donor
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
-            <input type="radio" name="role" value="seeker" style="width:auto;" />
-            🔍 Just search / post requests
-          </label>
-        </div>
-      </div>
 
-      <div class="form-row">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" required placeholder="e.g. Vishal Vaswani" />
-      </div>
-
-      <div class="form-row">
-        <label for="email">Email</label>
-        <div class="verify-row">
-          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email" />
-          <button type="button" class="btn btn-secondary btn-sm" id="emailSendBtn">Send OTP</button>
-        </div>
-        <div class="otp-box" id="emailOtpBox">
-          <input type="text" id="emailOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
-          <button type="button" class="btn btn-primary btn-sm" id="emailVerifyBtn">Verify</button>
-        </div>
-        <div class="verify-status" id="emailStatus"></div>
-        <button type="button" class="link-btn" id="emailChange" style="display:none;">Use a different email</button>
-      </div>
-
-      <div class="form-grid-2">
+      <div class="form-section">
+        <div class="section-title"><span class="step-no">1</span> What would you like to do?</div>
         <div class="form-row">
-          <label for="phone">Mobile Number</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
+              <input type="radio" name="role" value="donor" checked style="width:auto;" />
+              🩸 Register as a Blood Donor
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:8px; padding:10px 14px; flex:1; min-width:200px; cursor:pointer;">
+              <input type="radio" name="role" value="seeker" style="width:auto;" />
+              🔍 Just search / post requests
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title"><span class="step-no">2</span> Verify your email</div>
+        <p class="verify-help" id="emailHelp">Checking verification options…</p>
+        <div class="form-row">
+          <label for="email">Email address</label>
+          <div class="verify-row">
+            <input type="email" id="email" required placeholder="you@example.com" autocomplete="email" />
+            <button type="button" class="btn btn-secondary btn-sm" id="emailSendBtn">Send OTP</button>
+          </div>
+          <div class="otp-box" id="emailOtpBox">
+            <input type="text" id="emailOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
+            <button type="button" class="btn btn-primary btn-sm" id="emailVerifyBtn">Verify</button>
+          </div>
+          <div class="verify-status" id="emailStatus"></div>
+          <button type="button" class="link-btn" id="emailChange" style="display:none;">Use a different email</button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title"><span class="step-no">3</span> Verify your mobile number</div>
+        <p class="verify-help" id="phoneHelp">Checking verification options…</p>
+        <div class="form-row">
+          <label for="phone">Mobile number</label>
           <div class="verify-row">
             <input type="tel" id="phone" required placeholder="98765 43210" autocomplete="tel" />
             <button type="button" class="btn btn-secondary btn-sm" id="phoneSendBtn">Send OTP</button>
-            <button type="button" class="btn btn-phemail btn-sm" id="phonePeBtn" style="display:none;">Verify mobile</button>
           </div>
+          <button type="button" class="btn btn-phemail verify-big" id="phonePeBtn" style="display:none;">📱 Verify my mobile number</button>
+          <div id="peButtonSlot" style="display:none; margin-top:10px;"></div>
           <div class="otp-box" id="phoneOtpBox">
             <input type="text" id="phoneOtp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" />
             <button type="button" class="btn btn-primary btn-sm" id="phoneVerifyBtn">Verify</button>
           </div>
           <div class="verify-status" id="phoneStatus"></div>
-          <!-- PHONE.EMAIL BUTTON (recommended): in your Phone.Email Admin Dashboard, generate the
-               "Sign in with Phone" button code and paste it between the two markers below.
-               Leave the markers empty to use the built-in popup button instead. -->
-          <div id="peButtonSlot" style="display:none; margin-top:8px;">
-            <!-- PASTE-PHONE-EMAIL-BUTTON-START -->
-            <!-- PASTE-PHONE-EMAIL-BUTTON-END -->
-          </div>
           <button type="button" class="link-btn" id="phoneChange" style="display:none;">Use a different number</button>
         </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title"><span class="step-no">4</span> Your details</div>
+        <div class="form-row">
+          <label for="name">Full name</label>
+          <input type="text" id="name" required placeholder="e.g. Vishal Vaswani" autocomplete="name" />
+        </div>
+
         <div class="form-row" id="bloodGroupRow">
-          <label for="blood_group">Blood Group</label>
+          <label for="blood_group">Blood group</label>
           <select id="blood_group">
             <option value="">Select</option>
             <option>A+</option><option>A-</option>
@@ -83,67 +90,76 @@
             <option>O+</option><option>O-</option>
           </select>
         </div>
-      </div>
 
-      <div id="healthRow">
-        <div class="form-row">
-          <label>Do you have Sugar (diabetes)?</label>
-          <div class="yesno">
-            <label><input type="radio" name="has_sugar" value="yes" /> Yes</label>
-            <label><input type="radio" name="has_sugar" value="no" /> No</label>
+        <div id="healthRow">
+          <div class="form-row">
+            <label>Do you have Sugar (diabetes)?</label>
+            <div class="yesno">
+              <label><input type="radio" name="has_sugar" value="yes" /> Yes</label>
+              <label><input type="radio" name="has_sugar" value="no" /> No</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Do you have BP (blood pressure) problems?</label>
+            <div class="yesno">
+              <label><input type="radio" name="has_bp" value="yes" /> Yes</label>
+              <label><input type="radio" name="has_bp" value="no" /> No</label>
+            </div>
+            <p class="hint" style="margin:8px 0 0;">Your Yes/No answers for Sugar and BP are shown to people who search for donors, so they can pick a suitable donor.</p>
           </div>
         </div>
-        <div class="form-row">
-          <label>Do you have BP (blood pressure) problems?</label>
-          <div class="yesno">
-            <label><input type="radio" name="has_bp" value="yes" /> Yes</label>
-            <label><input type="radio" name="has_bp" value="no" /> No</label>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="city">City</label>
+            <input type="text" id="city" required placeholder="e.g. Jodhpur" />
           </div>
-          <p class="hint" style="margin:8px 0 0;">Your Yes/No answers for Sugar and BP are shown to people who search for donors, so they can pick a suitable donor.</p>
+          <div class="form-row">
+            <label for="state">State</label>
+            <input type="text" id="state" required placeholder="e.g. Rajasthan" />
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="age">Age <span class="hint">(optional)</span></label>
+            <input type="number" id="age" min="18" max="65" placeholder="18–65" />
+          </div>
+          <div class="form-row">
+            <label for="gender">Gender <span class="hint">(optional)</span></label>
+            <select id="gender">
+              <option value="">Prefer not to say</option>
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <input type="checkbox" id="shareLocation" checked style="width:auto; margin-right:6px;" />
+            Share my precise location for better proximity search <span class="hint">(recommended)</span>
+          </label>
         </div>
       </div>
 
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label for="city">City</label>
-          <input type="text" id="city" required placeholder="e.g. Jodhpur" />
+      <div class="form-section">
+        <div class="section-title"><span class="step-no">5</span> Create a password</div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="Create a password" autocomplete="new-password" />
+          </div>
+          <div class="form-row">
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password" required placeholder="Type it again" autocomplete="new-password" />
+          </div>
         </div>
-        <div class="form-row">
-          <label for="state">State</label>
-          <input type="text" id="state" required placeholder="e.g. Rajasthan" />
-        </div>
-      </div>
-
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label for="age">Age <span class="hint">(optional)</span></label>
-          <input type="number" id="age" min="18" max="65" placeholder="18–65" />
-        </div>
-        <div class="form-row">
-          <label for="gender">Gender <span class="hint">(optional)</span></label>
-          <select id="gender">
-            <option value="">Prefer not to say</option>
-            <option>Male</option><option>Female</option><option>Other</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label>
-          <input type="checkbox" id="shareLocation" checked style="width:auto; margin-right:6px;" />
-          Share my precise location for better proximity search <span class="hint">(recommended)</span>
-        </label>
-      </div>
-
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label for="password">Password</label>
-          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password" />
-        </div>
-        <div class="form-row">
-          <label for="confirm_password">Confirm Password</label>
-          <input type="password" id="confirm_password" required minlength="6" placeholder="Re-enter password" autocomplete="new-password" />
-        </div>
+        <ul class="pw-rules" id="pwRules">
+          <li data-rule="len">At least 8 characters</li>
+          <li data-rule="letter">At least one letter (a–z)</li>
+          <li data-rule="digit">At least one number (0–9)</li>
+        </ul>
+        <label class="show-pw"><input type="checkbox" id="showPw" /> Show password</label>
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Create Account</button>
@@ -156,6 +172,7 @@
 <footer>Blood Donor Emergency Connect &middot; BCA Project Synopsis 2026-27</footer>
 
 <script src="/js/app.js"></script>
+<script src="/js/pe-button.js"></script>
 <script>
 (async function main() {
   if (Auth.isLoggedIn()) { window.location.replace('/index.html'); return; }
@@ -176,14 +193,18 @@
 
   renderNavbar();
 
-  // The Phone.Email dashboard button calls this global function when the person
-  // has verified their number. (If the pasted code defines its own copy of it,
-  // this one — assigned after it in the page — takes over.)
+  const $ = (id) => document.getElementById(id);
+
+  // The Phone.Email button code (pasted once into /phoneemail-button.html) is
+  // loaded here; if there is none, our own "Verify my mobile number" button is used.
+  let peSlotUsed = await window.loadPhoneEmailButton($('peButtonSlot'));
+
+  // The Phone.Email button calls this global function when the person has
+  // verified their number. Assigned AFTER the button code loaded, so it takes
+  // over from any sample function that code defines.
   window.phoneEmailListener = function (userObj) {
     if (userObj && userObj.user_json_url) finishPhoneEmail({ user_json_url: userObj.user_json_url });
   };
-
-  const $ = (id) => document.getElementById(id);
   const form = $('registerForm');
   const submitBtn = $('submitBtn');
   const DRAFT_KEY = 'bdec_reg_draft';
@@ -236,11 +257,19 @@
   }
 
   // Did the admin paste the dashboard button into the slot? If so use it; otherwise our own button.
-  const peSlotUsed = !!document.getElementById('peButtonSlot').querySelector('*');
   function showPhoneEmailControl(show) {
     $('peButtonSlot').style.display = show && peSlotUsed ? '' : 'none';
     $('phonePeBtn').style.display = show && !peSlotUsed ? '' : 'none';
   }
+
+  // In Phone.Email mode the number is never typed: the box is locked and grey
+  // until the number is verified, then turns green.
+  function styleLockedPhone(state) {   // 'locked' | 'verified' | 'open'
+    const el = $('phone');
+    el.classList.toggle('locked-input', state === 'locked');
+    el.classList.toggle('verified-input', state === 'verified');
+  }
+  function pulse(el) { el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
 
   function markVerified(channel, token, value) {
     state[channel].token = token;
@@ -250,7 +279,8 @@
     clearInterval(state[channel].timer);
     const btn = $(channel + 'SendBtn');
     btn.disabled = true; btn.textContent = 'Verified';
-    if (channel === 'phone') showPhoneEmailControl(false);
+    if (channel === 'phone') { showPhoneEmailControl(false); if (modes.phone === 'phoneemail') styleLockedPhone('verified'); }
+    if (channel === 'email') $('email').classList.add('verified-input');
     setStatus(channel, `✔ ${channel === 'email' ? 'Email' : 'Mobile number'} verified`, 'ok');
     $(channel + 'Change').style.display = 'inline';
   }
@@ -265,6 +295,7 @@
     const sendBtn = $(channel + 'SendBtn');
     sendBtn.disabled = false;
     sendBtn.textContent = (channel === 'email' && modes.email === 'firebase') ? 'Send link' : 'Send OTP';
+    $(channel).classList.remove('verified-input');
     if (channel === 'email') {
       stopPolling();
       if (modes.email === 'firebase' && fb) fb.cancel();   // free the throw-away Firebase account
@@ -272,6 +303,7 @@
     } else if (modes.phone === 'phoneemail') {
       $('phone').value = '';                                   // the number comes from the verify button
       $('phone').readOnly = true;
+      styleLockedPhone('locked');
       sendBtn.style.display = 'none';
       showPhoneEmailControl(true);
     } else {
@@ -458,6 +490,24 @@
     finishPhoneEmail(ev.data.access_token);
   });
 
+  // People tap the number box expecting something to happen — make it start verification.
+  $('phone').addEventListener('click', () => {
+    if (modes.phone !== 'phoneemail' || state.phone.token) return;
+    if (peSlotUsed) { pulse($('peButtonSlot')); setStatus('phone', 'Press the button below to verify your mobile number.'); }
+    else { pulse($('phonePeBtn')); $('phonePeBtn').click(); }
+  });
+
+  // ---------------- password rules + show password ----------------
+  const pwRules = { len: (p) => p.length >= 8, letter: (p) => /[A-Za-z]/.test(p), digit: (p) => /\d/.test(p) };
+  function updatePasswordRules() {
+    const p = $('password').value;
+    document.querySelectorAll('#pwRules li').forEach((li) => li.classList.toggle('ok', pwRules[li.dataset.rule](p)));
+  }
+  $('password').addEventListener('input', updatePasswordRules);
+  $('showPw').addEventListener('change', (e) => {
+    ['password', 'confirm_password'].forEach((id) => { $(id).type = e.target.checked ? 'text' : 'password'; });
+  });
+
   // ---------------- wire up the Send / Verify buttons ----------------
   $('emailSendBtn').addEventListener('click', () => (modes.email === 'firebase' ? sendFirebaseEmail() : sendOtpFlow('email')));
   $('phoneSendBtn').addEventListener('click', () => sendOtpFlow('phone'));
@@ -478,8 +528,21 @@
   verificationRequired = cfg.required !== false;
   modes.email = cfg.email; modes.phone = cfg.phone;
 
+  // Plain-language instructions for whichever verification method is in use.
+  const HELP = {
+    email: {
+      firebase: 'Type your email address and press "Send link". We email you a link: open that email, tap the link inside it, then come back to this page. This page confirms by itself.',
+      other: 'Type your email address and press "Send OTP", then enter the 6-digit code we send you.',
+    },
+    phone: {
+      phoneemail: "You do not type your number here. Press the green button below, enter your mobile number in the small window that opens, and finish the OTP check there. Your verified number then appears in the box by itself.",
+      other: 'Type your 10-digit mobile number and press "Send OTP", then enter the 6-digit code we send you.',
+    },
+  };
+  $('emailHelp').textContent = modes.email === 'firebase' ? HELP.email.firebase : HELP.email.other;
+  $('phoneHelp').textContent = modes.phone === 'phoneemail' ? HELP.phone.phoneemail : HELP.phone.other;
   if (!verificationRequired) {
-    ['email', 'phone'].forEach((c) => { $(c + 'SendBtn').style.display = 'none'; });
+    ['email', 'phone'].forEach((c) => { $(c + 'SendBtn').style.display = 'none'; $(c + 'Help').style.display = 'none'; });
   } else {
     if (modes.email === 'firebase') {
       $('emailSendBtn').textContent = 'Send link';
@@ -490,7 +553,9 @@
       $('phoneSendBtn').style.display = 'none';
       showPhoneEmailControl(true);
       $('phone').readOnly = true;
-      $('phone').placeholder = peSlotUsed ? 'Use the Phone.Email button below →' : 'Tap "Verify mobile" →';
+      $('phone').setAttribute('inputmode', 'none');
+      $('phone').placeholder = 'Your number appears here after you verify';
+      styleLockedPhone('locked');
     }
     if (modes.email === 'none' || modes.phone === 'none') {
       showAlert('formAlert', 'Sign-up is temporarily unavailable: email/mobile verification has not been set up on this server yet. Please contact the site administrator.');
@@ -535,6 +600,7 @@
     const bp = document.querySelector('input[name="has_bp"]:checked');
     if (role === 'donor' && (!sugar || !bp)) return showAlert('formAlert', 'Please answer both the Sugar and BP questions.');
 
+    if (!Object.values(pwRules).every((ok) => ok($('password').value))) return showAlert('formAlert', 'Please choose a password with at least 8 characters, one letter and one number.');
     if ($('password').value !== $('confirm_password').value) return showAlert('formAlert', 'Passwords do not match.');
     if (verificationRequired && !state.email.token) return showAlert('formAlert', 'Please verify your email first.');
     if (verificationRequired && !state.phone.token) return showAlert('formAlert', 'Please verify your mobile number first.');

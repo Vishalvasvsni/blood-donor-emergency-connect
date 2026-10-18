@@ -1,7 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../config/db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, signSession } = require('../middleware/auth');
+const { validatePassword } = require('../utils/password');
 const { compatibleDonorGroupsFor, distanceKm, VALID_GROUPS } = require('../utils/blood');
 const {
   DONATION_COOLDOWN_DAYS, todayUTC, addDays, isValidDateStr, parseYesNo, ownView, searchView,
@@ -237,18 +238,22 @@ router.patch('/me/profile', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // PATCH /api/donors/me/password
+// Signs out every other session (and this one's old token) and returns a fresh
+// token so the person stays logged in on this device.
 router.patch('/me/password', requireAuth, asyncHandler(async (req, res) => {
   const { current_password, new_password } = req.body;
   const donor = await db.get('SELECT * FROM donors WHERE id = ?', [req.donorId]);
   if (!donor || !bcrypt.compareSync(current_password || '', donor.password_hash)) {
     return res.status(401).json({ error: 'Current password is incorrect.' });
   }
-  if (!new_password || new_password.length < 6) {
-    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
-  }
-  const password_hash = bcrypt.hashSync(new_password, 10);
-  await db.run('UPDATE donors SET password_hash = ? WHERE id = ?', [password_hash, req.donorId]);
-  res.json({ message: 'Password updated successfully.' });
+  const problem = validatePassword(new_password, { email: donor.email });
+  if (problem) return res.status(400).json({ error: problem });
+  const newHash = bcrypt.hashSync(new_password, 10);
+  await db.run('UPDATE donors SET password_hash = ?, password_changed_at = ? WHERE id = ?', [
+    newHash, Math.floor(Date.now() / 1000), req.donorId,
+  ]);
+  const token = signSession({ id: req.donorId, password_hash: newHash });
+  res.json({ message: 'Password updated successfully.', token });
 }));
 
 // GET /api/donors/me/contact-activity — who viewed my contact info

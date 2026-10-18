@@ -278,42 +278,35 @@ check there.
 3. On Render add `PHONE_EMAIL_CLIENT_ID` = that Client ID (no spaces or
    quotes) → Save.
 4. **Recommended:** in the dashboard generate the **"Sign in with Phone"
-   button code** (the "Single Button" option) and paste it into
-   `public/register.html` between the two `PASTE-PHONE-EMAIL-BUTTON` markers
-   in the mobile-number section. Leave the markers empty to use the built-in
-   popup button instead. If the pasted code contains its own
-   `phoneEmailListener` function, leave it — the page replaces it. Commit and
-   push.
+   button code** and paste it into **`public/phoneemail-button.html`**
+   (replace the comment in that file). Commit and push. Both the Register
+   page and the Forgot-Password page load the button from that one file, so
+   you paste it once, and updating other website files never removes it.
+   Leave the file as just a comment to use the built-in green button instead.
+   If you ever replace the whole project folder with a newer copy, keep your
+   own `phoneemail-button.html` (e.g. copy with
+   `robocopy ... /XF phoneemail-button.html`).
 
 Cost, per Phone.Email's pricing page: **1000 free SMS per month for India for
 the first 6 months**; after that SMS to India is charged (about $0.14 each).
 When the free period ends, either top up a small balance, or switch mobile
 verification to Fast2SMS (set `FAST2SMS_API_KEY` and remove
 `PHONE_EMAIL_CLIENT_ID`). Only +91 numbers are accepted by default
-(`PHONE_EMAIL_COUNTRY_CODES`).
+(`PHONE_EMAIL_COUNTRY_CODES`). Each verification — including each
+forgot-password check by mobile — uses one SMS from the free quota.
 
-#### Troubleshooting: the Phone.Email window says "You are not authorized"
+#### If the Phone.Email window says "You are not authorized"
 That message comes from Phone.Email's own page, so it is almost always an
-account/setting problem rather than a bug in this site. Work through these in
-order:
-1. **Use a clean browser window.** If the popup "automatically takes another
-   number", you're signed in to Phone.Email in that browser. Open a private /
-   incognito window (or sign out of phone.email) and try again.
-2. **Try Phone.Email's own demo** (<https://www.phone.email/demo-login>) with
-   the same other number. If the demo also says "not authorized", the problem is
-   your Phone.Email account, not this site: finish the dashboard profile
-   (business name), confirm the free plan is active, and contact Phone.Email
-   (Contact us / WhatsApp on their Integration Docs page).
-3. **Check the Client ID** — Admin Panel → *Phone.Email → Run check* shows the
-   Client ID this server is really using (masked) and flags stray spaces or
-   quotes. It must match **Profile Details** in the dashboard exactly.
-4. **Register your site address.** If the dashboard has a website / domain /
-   redirect setting, enter your Render address (*Run check* shows exactly what
-   to enter).
-5. **Use the dashboard-generated button** (step 4 above) instead of the
-   built-in popup button.
-6. *Run check* also shows Phone.Email's raw reply to the server; send that to
-   Phone.Email support if the steps above don't fix it.
+account/setting problem, not this site:
+1. Use a private/incognito window (or sign out of phone.email) — the popup
+   reuses whatever Phone.Email account that browser is signed in to.
+2. Try Phone.Email's own demo (<https://www.phone.email/demo-login>). If that
+   also fails, fix your Phone.Email account (dashboard profile, business name,
+   free plan active) or contact them.
+3. Make sure `PHONE_EMAIL_CLIENT_ID` matches **Profile Details** exactly
+   (stray spaces/quotes are trimmed automatically).
+4. Register your Render address in the dashboard if it has a website/domain
+   setting, and use the dashboard-generated button (step 4).
 
 ### Known limitations (be upfront about these in your viva)
 - Email verification is "click the link we emailed", not a typed code. Someone
@@ -329,6 +322,35 @@ order:
 
 ---
 
+## 5.8 Passwords, forgot-password and sessions
+
+**Password rules** (applied whenever a password is *set* — sign-up, changing it,
+resetting it; existing accounts can still log in with older passwords): at
+least 8 characters, at least one letter and one number, not a very common
+password (e.g. `password123`), and not containing the person's email name.
+The sign-up and reset pages show a live checklist and a "Show password" box.
+
+**Forgot password** (`/forgot-password.html`, linked from the login page). No
+paid service and no emailed secret is needed: the person proves it's them with
+the **same free verification used at sign-up** — an email link (Firebase) or the
+mobile check (Phone.Email) — and then chooses a new password.
+- The proof lasts 15 minutes and works **once** (it is tied to the current
+  password, so it stops working the moment the password changes).
+- It only works for an **existing** account; blocked accounts can't reset.
+- Changing or resetting a password **signs out every other session** (and the
+  dashboard keeps the current device logged in).
+- Each reset by mobile uses one Phone.Email SMS; each reset by email uses one
+  Firebase verification email (free limit: 1000/day).
+
+**Anti-abuse limits** (defaults are right for production; tunable with
+`OTP_RESEND_COOLDOWN_SEC`, `OTP_MAX_PER_HOUR`, `OTP_IP_LIMIT_PER_HOUR`).
+
+**Security note.** User-typed text (names, cities, messages…) is escaped before
+being shown, so a name like `<img onerror=…>` is displayed as plain text and
+cannot run code in another person's — or the admin's — browser.
+
+---
+
 ## 6. API Reference (for evaluators / viva)
 
 | Method | Endpoint                              | Auth | Description |
@@ -340,6 +362,7 @@ order:
 | POST   | `/api/auth/precheck`                     | –    | Is this email/number free to use? (called before Firebase sends anything) |
 | POST   | `/api/auth/firebase/verify`              | –    | Check a Firebase ID token for a verified email; returns a proof token |
 | POST   | `/api/auth/phoneemail/verify`            | –    | Exchange a Phone.Email access token for a verified mobile number; returns a proof token |
+| POST   | `/api/auth/reset-password`               | –    | Set a new password using a reset proof (see 5.8) |
 | POST   | `/api/auth/login`                       | –    | Log in, returns JWT |
 | GET    | `/api/auth/me`                          | JWT  | Restore session |
 | GET    | `/api/donors/search`                    | JWT  | Search donors by blood group / city / lat,lng |

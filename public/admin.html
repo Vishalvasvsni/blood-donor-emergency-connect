@@ -33,12 +33,6 @@
   </div>
 
   <div class="card" style="margin-bottom:24px;">
-    <h3 style="margin-top:0;">Phone.Email (mobile verification)</h3>
-    <div id="peStatus" style="font-size:0.88rem; color:var(--muted);">Press "Run check" if mobile verification shows "You are not authorized".</div>
-    <button class="btn btn-secondary btn-sm" id="peCheckBtn" type="button" style="margin-top:10px;">Run check</button>
-  </div>
-
-  <div class="card" style="margin-bottom:24px;">
     <h3 style="margin-top:0;">Blocked emails &amp; mobile numbers</h3>
     <p style="font-size:0.82rem; color:var(--muted); margin-top:-6px;">These can't log in or register again. Deleting a blocked account does not lift the block.</p>
     <div id="blockedList" style="font-size:0.88rem;">Loading…</div>
@@ -130,25 +124,23 @@
           ${users.map(u => `
             <tr style="border-top:1px solid var(--border);">
               <td style="padding:10px 12px; font-size:0.85rem;">#${u.id}</td>
-              <td style="padding:10px 12px; font-size:0.85rem; font-weight:600;">${u.name}${u.is_admin ? ' 👑' : ''}${u.is_blocked ? ' <span class="badge badge-blocked">Blocked</span>' : ''}${u.is_blocked && u.blocked_reason ? `<div style="font-weight:400; font-size:0.75rem; color:var(--muted);">${u.blocked_reason}</div>` : ''}</td>
-              <td style="padding:10px 12px; font-size:0.85rem;">${u.email}</td>
-              <td style="padding:10px 12px; font-size:0.85rem;">${u.phone}</td>
+              <td style="padding:10px 12px; font-size:0.85rem; font-weight:600;">${esc(u.name)}${u.is_admin ? ' 👑' : ''}${u.is_blocked ? ' <span class="badge badge-blocked">Blocked</span>' : ''}${u.is_blocked && u.blocked_reason ? `<div style="font-weight:400; font-size:0.75rem; color:var(--muted);">${esc(u.blocked_reason)}</div>` : ''}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${esc(u.email)}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${esc(u.phone)}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.role}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.blood_group || '—'}</td>
-              <td style="padding:10px 12px; font-size:0.85rem;">${u.city}, ${u.state}</td>
+              <td style="padding:10px 12px; font-size:0.85rem;">${esc(u.city)}, ${esc(u.state)}</td>
               <td style="padding:10px 12px; font-size:0.8rem; white-space:nowrap;">${u.email_verified ? '✔' : '✖'} email<br/>${u.phone_verified ? '✔' : '✖'} mobile</td>
               <td style="padding:10px 12px; font-size:0.8rem; white-space:nowrap;">${u.role === 'donor' ? `${yn(u.has_sugar)} / ${yn(u.has_bp)}` : '—'}</td>
               <td style="padding:10px 12px; font-size:0.85rem;">${u.role === 'donor' ? (u.is_blocked ? '<span class="badge badge-blocked">Blocked</span>' : (u.is_active ? '<span class="badge badge-active">Available</span>' : (u.auto_paused ? `<span class="badge badge-inactive" title="Auto-paused after donation">Resting until ${u.cooldown_until}</span>` : '<span class="badge badge-inactive">Inactive</span>'))) : (u.is_blocked ? '<span class="badge badge-blocked">Blocked</span>' : '—')}</td>
               <td style="padding:10px 12px; font-size:0.8rem; color:var(--muted);">${u.created_at}</td>
               <td style="padding:10px 12px;">
-                <div style="display:flex; gap:6px; flex-wrap:wrap; min-width:150px;">
+                <div class="admin-actions">
                 ${u.is_admin
-                  ? (u.id === currentAdminId ? '' : `<button class="btn btn-sm demote-btn" style="background:#f1f1f1; color:var(--muted);" data-id="${u.id}" data-name="${u.name}">Revoke Admin</button>`)
+                  ? (u.id === currentAdminId ? '' : `<button class="abtn abtn-revoke demote-btn" data-id="${u.id}" data-name="${esc(u.name)}">Revoke Admin</button>`)
                   : `${u.is_blocked
-                       ? `<button class="btn btn-sm unblock-btn" style="background:#e9f7ee; color:var(--green);" data-id="${u.id}" data-name="${u.name}">Unblock</button>`
-                       : `<button class="btn btn-sm block-btn" style="background:#9c2020; color:#fff;" data-id="${u.id}" data-name="${u.name}">Block</button>
-                          <button class="btn btn-sm promote-btn" style="background:#fff4d6; color:#a16207;" data-id="${u.id}" data-name="${u.name}">Make Admin</button>`}
-                     <button class="btn btn-sm delete-btn" style="background:#fdeceb; color:#9c2020;" data-id="${u.id}" data-name="${u.name}">Delete</button>`}
+                       ? `<button class="abtn abtn-unblock unblock-btn" data-id="${u.id}" data-name="${esc(u.name)}">Unblock</button>`
+                       : `<button class="abtn abtn-block block-btn" data-id="${u.id}" data-name="${esc(u.name)}">Block</button><button class="abtn abtn-admin promote-btn" data-id="${u.id}" data-name="${esc(u.name)}">Make Admin</button>`}<button class="abtn abtn-delete delete-btn" data-id="${u.id}" data-name="${esc(u.name)}">Delete</button>`}
                 </div>
               </td>
             </tr>
@@ -220,10 +212,10 @@
       el.innerHTML = blocked.map((b) => `
         <div class="log-item" style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
           <div>
-            <strong>${b.email_original || '—'}</strong> · ${b.phone_original || '—'}
-            <div style="color:var(--muted); font-size:0.78rem;">${b.reason ? b.reason + ' · ' : ''}blocked ${b.created_at}</div>
+            <strong>${esc(b.email_original) || '—'}</strong> · ${esc(b.phone_original) || '—'}
+            <div style="color:var(--muted); font-size:0.78rem;">${b.reason ? esc(b.reason) + ' · ' : ''}blocked ${b.created_at}</div>
           </div>
-          <button class="btn btn-sm remove-blocked" style="background:#e9f7ee; color:var(--green);" data-id="${b.id}">Remove from list</button>
+          <button class="abtn abtn-unblock remove-blocked" style="width:130px;" data-id="${b.id}">Remove from list</button>
         </div>`).join('');
       el.querySelectorAll('.remove-blocked').forEach((btn) => btn.addEventListener('click', async () => {
         if (!confirm('Remove this email/number from the block list? That person (if their account still exists) will be unblocked.')) return;
@@ -256,22 +248,6 @@
   document.getElementById('refreshBtn').addEventListener('click', () => { loadUsers(); loadSummary(); });
   document.getElementById('roleFilter').addEventListener('change', applyFilters);
   document.getElementById('searchBox').addEventListener('input', applyFilters);
-
-  document.getElementById('peCheckBtn').addEventListener('click', async () => {
-    const el = document.getElementById('peStatus');
-    el.textContent = 'Checking…';
-    try {
-      const r = await api('/admin/phoneemail-status', { auth: true });
-      if (!r.configured) { el.textContent = 'PHONE_EMAIL_CLIENT_ID is not set on this server, so Phone.Email is not in use.'; return; }
-      const probe = r.probe.reachable ? `Phone.Email replied (HTTP ${r.probe.httpStatus}): ${r.probe.body}` : `Could not reach Phone.Email: ${r.probe.error}`;
-      el.innerHTML = [
-        `<strong>Client ID this server uses:</strong> ${r.clientIdMasked} (${r.clientIdLength} characters)${r.hadStrayCharacters ? ' — <em>stray spaces/quotes were found and ignored; fix the value in Render</em>' : ''}`,
-        `<strong>Compare it</strong> with Client ID in your Phone.Email dashboard → Profile Details. They must match exactly.`,
-        `<strong>Website address to register in the dashboard, if it asks:</strong> ${r.siteAddress} (return page: ${r.registerPage})`,
-        `<strong>${probe.replace(/</g, '&lt;')}</strong>`,
-      ].join('<br/>');
-    } catch (err) { el.textContent = err.message; }
-  });
 
   async function checkSalesforceStatus() {
     const el = document.getElementById('sfStatus');

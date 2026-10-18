@@ -1,0 +1,21 @@
+<!--
+  PHONE.EMAIL BUTTON CODE — paste it here ONCE.
+
+  Open your Phone.Email dashboard, generate the "Sign in with Phone" button
+  code, and paste it into this file (replace this whole comment).
+  The Register page and the Forgot-Password page both load it from here, so
+  you never need to paste it anywhere else, and updating the website's other
+  files will not remove it.
+
+  Leave this file as just a comment to use the built-in verify button instead.
+-->
+<div class="pe_signin_button" data-client-id="16519437598669724874"><script src="https://www.phone.email/sign_in_button_v1.js" async></script></div>
+<script>
+    function phoneEmailListener(userObj){
+        var user_json_url = userObj.user_json_url;
+        
+        // You can submit your form here or redirect user to post login dashboard page
+        // Send user_json_url to your backend to retrieve user info (i.e. country code and phone number) from this URL.
+        alert('Phone Verification Successfull !!\nPlease fetch authenticated country code and phone number from following JSON file URL.\n '+user_json_url+'');
+    }
+</script> 

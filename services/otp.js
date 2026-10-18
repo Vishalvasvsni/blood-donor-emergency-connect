@@ -17,14 +17,16 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
-const { JWT_SECRET } = require('../middleware/auth');
+const { JWT_SECRET, passwordFingerprint } = require('../middleware/auth');
 const { fetchWithTimeout } = require('../utils/http');
 const firebase = require('./firebase');
 const phoneemail = require('./phoneemail');
 
 const OTP_TTL_MIN = 10;
-const RESEND_COOLDOWN_SEC = 30;
-const MAX_PER_HOUR = 5;
+// Anti-abuse limits. Defaults are right for production; they can be tuned with
+// OTP_RESEND_COOLDOWN_SEC / OTP_MAX_PER_HOUR (used to relax them in automated tests).
+const RESEND_COOLDOWN_SEC = process.env.OTP_RESEND_COOLDOWN_SEC !== undefined ? Math.max(0, Number(process.env.OTP_RESEND_COOLDOWN_SEC)) : 30;
+const MAX_PER_HOUR = Number(process.env.OTP_MAX_PER_HOUR) || 5;
 const MAX_ATTEMPTS = 5;
 const DEV_MODE = process.env.OTP_DEV_MODE === 'true';
 const APP_NAME = 'Blood Donor Emergency Connect';
@@ -151,7 +153,8 @@ async function sendOtp(channel, target) {
   return { mode };
 }
 
-async function verifyOtp(channel, target, code) {
+// Checks and consumes the code, without issuing any token.
+async function checkCode(channel, target, code) {
   const row = await db.get(
     `SELECT * FROM otp_codes
      WHERE channel = ? AND target = ? AND consumed = 0 AND expires_at > datetime('now')
@@ -169,6 +172,10 @@ async function verifyOtp(channel, target, code) {
   }
 
   await db.run('UPDATE otp_codes SET consumed = 1 WHERE id = ?', [row.id]);
+}
+
+async function verifyOtp(channel, target, code) {
+  await checkCode(channel, target, code);
   return issueToken(channel, target);
 }
 
@@ -176,6 +183,27 @@ async function verifyOtp(channel, target, code) {
 // Registration requires one for the email and one for the mobile number.
 function issueToken(channel, target) {
   return jwt.sign({ purpose: 'contact-verify', channel, target }, JWT_SECRET, { expiresIn: '30m' });
+}
+
+// ---- password reset proofs --------------------------------------------------
+// Issued after the person proves they own the account's email / mobile number.
+// Bound to the account's CURRENT password (a fingerprint of its hash), so the
+// moment the password changes, the token stops working: single use.
+function issueResetToken(account) {
+  return jwt.sign(
+    { purpose: 'password-reset', uid: account.id, pv: passwordFingerprint(account.password_hash) },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+}
+
+function readResetToken(token) {
+  try {
+    const p = jwt.verify(String(token || ''), JWT_SECRET);
+    return p.purpose === 'password-reset' && p.uid ? p : null;
+  } catch {
+    return null;
+  }
 }
 
 function isTokenValid(token, channel, target) {
@@ -188,4 +216,7 @@ function isTokenValid(token, channel, target) {
   }
 }
 
-module.exports = { OtpError, DEV_MODE, verificationRequired, channelMode, sendOtp, verifyOtp, issueToken, isTokenValid };
+module.exports = {
+  OtpError, DEV_MODE, verificationRequired, channelMode, sendOtp, checkCode, verifyOtp,
+  issueToken, isTokenValid, issueResetToken, readResetToken, passwordFingerprint,
+};

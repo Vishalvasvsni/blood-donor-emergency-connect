@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
-const { JWT_SECRET, BLOCKED_MESSAGE } = require('../middleware/auth');
+const { JWT_SECRET, BLOCKED_MESSAGE, signSession, sessionStillValid } = require('../middleware/auth');
 const { VALID_GROUPS } = require('../utils/blood');
 const { phoneKey, isValidPhone, parseYesNo, ownView } = require('../utils/donor');
 const asyncHandler = require('../utils/asyncHandler');
@@ -10,6 +10,7 @@ const salesforce = require('../services/salesforce');
 const otp = require('../services/otp');
 const firebase = require('../services/firebase');
 const phoneemail = require('../services/phoneemail');
+const { validatePassword } = require('../utils/password');
 const blocklist = require('../services/blocklist');
 
 const router = express.Router();
@@ -57,7 +58,7 @@ async function promoteIfAdminEmail(donor) {
 // Light per-IP cap on "send OTP" so nobody can burn your SMS/email quota by
 // hammering random numbers. (Per-address limits live in services/otp.js.)
 const ipHits = new Map();
-function ipLimited(ip, max = 30) {
+function ipLimited(ip, max = Number(process.env.OTP_IP_LIMIT_PER_HOUR) || 30) {
   const now = Date.now();
   const recent = (ipHits.get(ip) || []).filter((t) => now - t < 3600 * 1000);
   const limited = recent.length >= max;
@@ -119,6 +120,52 @@ async function rejectUnavailableContact(res, channel, key) {
   return false;
 }
 
+// ---- two purposes for verifying an email / mobile number ---------------------
+//   register (default): the contact must be NEW — not taken, not blocked.
+//   reset:              forgot password — an account must already EXIST for it.
+const purposeOf = (req) => ((req.body || {}).purpose === 'reset' ? 'reset' : 'register');
+
+async function findAccount(channel, key) {
+  return channel === 'email'
+    ? db.get('SELECT * FROM donors WHERE email = ?', [key])
+    : db.get('SELECT * FROM donors WHERE phone_norm = ?', [key]);
+}
+
+// For password reset: returns the account, or sends the error response and returns null.
+async function accountForReset(res, channel, key) {
+  const account = await findAccount(channel, key);
+  if (!account) {
+    res.status(404).json({
+      error: channel === 'email'
+        ? 'We could not find an account with this email address.'
+        : 'We could not find an account with this mobile number.',
+    });
+    return null;
+  }
+  if (account.is_blocked) {
+    res.status(403).json({ error: BLOCKED_MESSAGE, blocked: true });
+    return null;
+  }
+  return account;
+}
+
+// true = an error response was already sent
+async function rejectContact(res, purpose, channel, key) {
+  if (purpose === 'reset') return !(await accountForReset(res, channel, key));
+  return rejectUnavailableContact(res, channel, key);
+}
+
+// The end of every verify route: hand back the right kind of proof.
+async function respondWithProof(res, purpose, channel, key, display) {
+  if (purpose === 'reset') {
+    const account = await accountForReset(res, channel, key);
+    if (!account) return;
+    return res.json({ verified: true, token: otp.issueResetToken(account), value: display });
+  }
+  if (await rejectUnavailableContact(res, channel, key)) return;
+  res.json({ verified: true, token: otp.issueToken(channel, key), value: display });
+}
+
 // POST /api/auth/precheck  { channel, target }
 // Called BEFORE Firebase sends an SMS / email, so we never pay to text (or
 // email) a blocked or already-registered contact.
@@ -129,7 +176,7 @@ router.post('/precheck', asyncHandler(async (req, res) => {
   if (ipLimited(req.ip)) {
     return res.status(429).json({ error: 'Too many verification requests from this network. Please try again later.' });
   }
-  if (await rejectUnavailableContact(res, channel, t.value)) return;
+  if (await rejectContact(res, purposeOf(req), channel, t.value)) return;
   res.json({ ok: true, value: t.value });
 }));
 
@@ -155,8 +202,7 @@ router.post('/firebase/verify', asyncHandler(async (req, res) => {
     return res.status(502).json({ error: "We couldn't check the verification right now. Please try again in a moment." });
   }
 
-  if (await rejectUnavailableContact(res, 'email', email)) return;
-  res.json({ verified: true, token: otp.issueToken('email', email), value: email });
+  await respondWithProof(res, purposeOf(req), 'email', email, email);
 }));
 
 // POST /api/auth/phoneemail/verify  { access_token }  or  { user_json_url }   (mobile only)
@@ -184,8 +230,7 @@ router.post('/phoneemail/verify', asyncHandler(async (req, res) => {
     return res.status(502).json({ error: "We couldn't reach the verification service. Please try again in a moment." });
   }
 
-  if (await rejectUnavailableContact(res, 'phone', phone.key)) return;
-  res.json({ verified: true, token: otp.issueToken('phone', phone.key), value: phone.display });
+  await respondWithProof(res, purposeOf(req), 'phone', phone.key, phone.display);
 }));
 
 // POST /api/auth/send-otp  { channel: 'email'|'phone', target }
@@ -198,7 +243,7 @@ router.post('/send-otp', asyncHandler(async (req, res) => {
   const t = normaliseTarget(channel, target);
   if (t.error) return res.status(400).json({ error: t.error });
 
-  if (await rejectUnavailableContact(res, channel, t.value)) return;
+  if (await rejectContact(res, purposeOf(req), channel, t.value)) return;
 
   if (ipLimited(req.ip)) {
     return res.status(429).json({ error: 'Too many verification requests from this network. Please try again later.' });
@@ -222,12 +267,45 @@ router.post('/verify-otp', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Please enter the 6-digit code.' });
   }
   try {
+    if (purposeOf(req) === 'reset') {
+      await otp.checkCode(channel, t.value, code);
+      return respondWithProof(res, 'reset', channel, t.value, t.value);
+    }
     const token = await otp.verifyOtp(channel, t.value, code);
     res.json({ verified: true, token });
   } catch (err) {
     if (err instanceof otp.OtpError) return res.status(err.status).json({ error: err.message });
     throw err;
   }
+}));
+
+// POST /api/auth/reset-password  { token, new_password }
+// `token` is the proof from verifying the account's email / mobile number with
+// purpose "reset". It lasts 15 minutes and works once: it is tied to the
+// current password, so it stops working the moment the password changes.
+// Changing the password also signs out every older session.
+router.post('/reset-password', asyncHandler(async (req, res) => {
+  const { token, new_password } = req.body || {};
+  if (ipLimited(req.ip)) {
+    return res.status(429).json({ error: 'Too many attempts from this network. Please try again later.' });
+  }
+  const claims = otp.readResetToken(token);
+  if (!claims) {
+    return res.status(400).json({ error: 'This reset has expired. Please verify again to reset your password.' });
+  }
+  const account = await db.get('SELECT * FROM donors WHERE id = ?', [claims.uid]);
+  if (!account) return res.status(400).json({ error: 'This reset is no longer valid. Please start again.' });
+  if (account.is_blocked) return res.status(403).json({ error: BLOCKED_MESSAGE, blocked: true });
+  if (otp.passwordFingerprint(account.password_hash) !== claims.pv) {
+    return res.status(400).json({ error: 'This reset has already been used. Please start again if you need to.' });
+  }
+  const problem = validatePassword(new_password, { email: account.email });
+  if (problem) return res.status(400).json({ error: problem });
+
+  await db.run('UPDATE donors SET password_hash = ?, password_changed_at = ? WHERE id = ?', [
+    bcrypt.hashSync(new_password, 10), Math.floor(Date.now() / 1000), account.id,
+  ]);
+  res.json({ message: 'Your password has been changed. Please log in with your new password.' });
 }));
 
 // POST /api/auth/register  — donor OR seeker (non-donor) registration.
@@ -255,9 +333,8 @@ router.post('/register', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Please answer both the Sugar and BP questions (Yes or No).' });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
-  }
+  const passwordProblem = validatePassword(password, { email });
+  if (passwordProblem) return res.status(400).json({ error: passwordProblem });
   if (!EMAIL_RE.test(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
   }
@@ -324,7 +401,7 @@ router.post('/register', asyncHandler(async (req, res) => {
   const donor = await db.get('SELECT * FROM donors WHERE id = ?', [info.lastInsertRowid]);
   await promoteIfAdminEmail(donor);
   await syncContactToSalesforce(donor);
-  const token = jwt.sign({ id: donor.id }, JWT_SECRET, { expiresIn: '30d' });
+  const token = signSession(donor);
 
   res.status(201).json({ token, donor: ownView(donor) });
 }));
@@ -351,7 +428,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   const fresh = await db.get('SELECT * FROM donors WHERE id = ?', [donor.id]);
   fresh.is_admin = donor.is_admin;
 
-  const token = jwt.sign({ id: donor.id }, JWT_SECRET, { expiresIn: '30d' });
+  const token = signSession(donor);
   res.json({ token, donor: ownView(fresh) });
 }));
 
@@ -370,6 +447,7 @@ router.get('/me', asyncHandler(async (req, res) => {
   const donor = await db.get('SELECT * FROM donors WHERE id = ?', [payload.id]);
   if (!donor) return res.status(401).json({ error: 'Account not found.' });
   if (donor.is_blocked) return res.status(403).json({ error: BLOCKED_MESSAGE, blocked: true });
+  if (!sessionStillValid(payload, donor)) return res.status(401).json({ error: 'Your password was changed. Please log in again.' });
   await promoteIfAdminEmail(donor);
   res.json({ donor: ownView(donor) });
 }));

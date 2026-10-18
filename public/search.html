@@ -86,10 +86,10 @@
         <div class="donor-main">
           <div class="donor-avatar">${initials(d.name)}</div>
           <div class="donor-info">
-            <h4>${d.name} ${d.verified ? '<span class="badge badge-verified" title="Email and mobile number verified">✔ Verified</span>' : ''}</h4>
+            <h4>${esc(d.name)} ${d.verified ? '<span class="badge badge-verified" title="Email and mobile number verified">✔ Verified</span>' : ''}</h4>
             <div class="donor-meta">
               ${bloodBadge(d.blood_group, d.exact_match)}
-              <span>📍 ${d.city}, ${d.state}</span>
+              <span>📍 ${esc(d.city)}, ${esc(d.state)}</span>
               ${d.distance_km !== null ? `<span>· ${d.distance_km} km away</span>` : ''}
               <span class="badge badge-active">Available</span>
             </div>

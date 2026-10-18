@@ -354,3 +354,43 @@ footer {
 .btn-phemail { background: #02a86f; color: #fff; border: 0; }
 .btn-phemail:hover { background: #028a5b; color: #fff; }
 .link-btn { background: none; border: 0; color: var(--red); cursor: pointer; font-size: 0.8rem; padding: 0; margin-top: 4px; text-decoration: underline; }
+
+/* --- Sign-up / reset forms: numbered steps, locked fields, password rules --- */
+.form-section { border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px 6px; margin-bottom: 18px; background: #fff; }
+.section-title { font-weight: 800; font-size: 1.02rem; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.step-no { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--red); color: #fff; font-size: 0.85rem; flex-shrink: 0; }
+.verify-help { font-size: 0.86rem; color: var(--muted); margin: 0 0 12px; line-height: 1.45; }
+.locked-input { background: #f3f4f6 !important; border-style: dashed !important; color: var(--muted) !important; cursor: pointer; text-align: center; }
+.verified-input { background: #e9f7ee !important; border-color: #a7e0bd !important; color: #166534 !important; font-weight: 700; text-align: center; }
+.verify-big { padding: 13px 18px; font-size: 1rem; margin-top: 10px; display: block; width: 100%; text-align: center; border-radius: 10px; }
+.pulse { animation: bdec-pulse 0.5s ease 3; }
+@keyframes bdec-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(2,168,111,0.25); } }
+.pw-rules { list-style: none; margin: 4px 0 12px; padding: 0; font-size: 0.82rem; color: var(--muted); display: grid; gap: 3px; }
+.pw-rules li::before { content: '○ '; }
+.pw-rules li.ok { color: var(--green); font-weight: 600; }
+.pw-rules li.ok::before { content: '✔ '; }
+.show-pw { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; margin: -6px 0 16px; color: var(--muted); }
+.show-pw input { width: auto !important; }
+.method-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+.method-tabs button { flex: 1; padding: 11px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.92rem; }
+.method-tabs button.active { border-color: var(--red); background: var(--red-light); color: var(--red-dark); }
+.method-tabs button:disabled { opacity: 0.5; cursor: not-allowed; }
+.forgot-link { text-align: right; font-size: 0.85rem; margin: -6px 0 14px; }
+
+/* --- Admin: user action buttons all the same size --- */
+.admin-actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+.admin-actions .abtn { width: 104px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; border-radius: 8px; border: 0; cursor: pointer; white-space: nowrap; font-family: inherit; }
+.abtn-block { background: #9c2020; color: #fff; }
+.abtn-unblock { background: #e9f7ee; color: var(--green); }
+.abtn-admin { background: #fff4d6; color: #a16207; }
+.abtn-revoke { background: #f1f1f1; color: #52525b; }
+.abtn-delete { background: #fdeceb; color: #9c2020; }
+
+/* --- Dashboard: contact activity stays compact and scrolls --- */
+.activity-box { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; }
+.activity-item { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; justify-content: space-between; gap: 10px; }
+.activity-item:last-child { border-bottom: 0; }
+.activity-item .who { font-weight: 700; }
+.activity-item .when { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+.activity-item .why { color: var(--muted); font-size: 0.78rem; }
+.activity-count { background: var(--red-light); color: var(--red-dark); border-radius: 999px; padding: 2px 9px; font-size: 0.75rem; font-weight: 700; margin-left: 6px; }

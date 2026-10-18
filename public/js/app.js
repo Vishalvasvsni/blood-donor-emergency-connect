@@ -57,6 +57,15 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   return data;
 }
 
+// Escape text before putting it into an HTML template. Names, cities, messages
+// etc. are typed by users, so without this someone could register as
+// "<img onerror=...>" and run code in other people's (or the admin's) browser.
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function initials(name) {
   if (!name) return '?';
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('');

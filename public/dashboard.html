@@ -75,7 +75,7 @@
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0;">Recent Contact Activity</h3>
+        <h3 style="margin-top:0;">Recent Contact Activity <span class="activity-count" id="activityCount" style="display:none;"></span></h3>
         <p style="font-size:0.82rem; color:var(--muted); margin-top:-6px;">People who viewed your contact details</p>
         <div id="activityList"></div>
       </div>
@@ -165,9 +165,10 @@
           </div>
           <div class="form-row">
             <label for="new_password">New Password</label>
-            <input type="password" id="new_password" required minlength="6" />
+            <input type="password" id="new_password" required />
           </div>
         </div>
+        <p class="hint" style="margin:-4px 0 12px;">Use at least 8 characters, with at least one letter and one number.</p>
         <button type="submit" class="btn btn-secondary btn-sm">Update Password</button>
       </form>
 
@@ -259,20 +260,27 @@
     }
   }
 
+  // The activity list lives in a fixed-height box that scrolls inside itself,
+  // so a long history never stretches the page.
   async function loadActivity() {
     try {
       const { logs } = await api('/donors/me/contact-activity', { auth: true });
       const list = document.getElementById('activityList');
+      const badge = document.getElementById('activityCount');
       if (!logs.length) {
-        list.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">No one has viewed your contact yet.</p>';
+        badge.style.display = 'none';
+        list.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; margin:0;">No one has viewed your contact yet.</p>';
         return;
       }
-      list.innerHTML = logs.map(l => `
-        <div class="log-item">
-          <strong>${l.requester_name || 'Anonymous'}</strong> viewed your contact<br/>
-          <span style="color:var(--muted);">${timeAgo(l.created_at)}${l.reason ? ' · ' + l.reason : ''}</span>
-        </div>
-      `).join('');
+      badge.textContent = logs.length; badge.style.display = 'inline';
+      list.innerHTML = '<div class="activity-box">' + logs.map((l) => `
+        <div class="activity-item">
+          <div>
+            <div class="who">${esc(l.requester_name || 'Anonymous')}</div>
+            ${l.reason ? `<div class="why">${esc(l.reason)}</div>` : ''}
+          </div>
+          <div class="when">${timeAgo(l.created_at)}</div>
+        </div>`).join('') + '</div>';
     } catch (err) { /* non-critical */ }
   }
 
@@ -372,8 +380,12 @@
   document.getElementById('pwForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert('pwAlert'); hideAlert('pwSuccess');
+    const np = document.getElementById('new_password').value;
+    if (np.length < 8 || !/[A-Za-z]/.test(np) || !/\d/.test(np)) {
+      return showAlert('pwAlert', 'Use at least 8 characters, with at least one letter and one number.', 'error');
+    }
     try {
-      await api('/donors/me/password', {
+      const res = await api('/donors/me/password', {
         method: 'PATCH',
         auth: true,
         body: {
@@ -381,7 +393,10 @@
           new_password: document.getElementById('new_password').value,
         },
       });
-      showAlert('pwSuccess', 'Password updated!', 'success');
+      // Changing the password signs out every older session; the server sends a
+      // fresh token so this device stays logged in.
+      if (res.token) Auth.setSession(res.token, Auth.getDonor());
+      showAlert('pwSuccess', 'Password updated! Other devices have been signed out.', 'success');
       document.getElementById('pwForm').reset();
     } catch (err) {
       showAlert('pwAlert', err.message, 'error');

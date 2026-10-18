@@ -91,18 +91,4 @@ async function phoneFromJsonUrl(url) {
   return normalisePhone(data.user_country_code, data.user_phone_number);
 }
 
-// Admin diagnostic: asks Phone.Email's API about a made-up token, so the
-// admin can see whether it is reachable and how it reacts to our Client ID.
-async function probe() {
-  try {
-    const form = new FormData();
-    form.append('access_token', 'diagnostic-check');
-    form.append('client_id', clientId());
-    const res = await fetchWithTimeout(apiUrl(), { method: 'POST', body: form });
-    return { reachable: true, httpStatus: res.status, body: (await res.text()).slice(0, 300) };
-  } catch (err) {
-    return { reachable: false, error: err.message };
-  }
-}
-
-module.exports = { ProofError, enabledFor, clientId, phoneFromAccessToken, phoneFromJsonUrl, probe };
+module.exports = { ProofError, enabledFor, clientId, phoneFromAccessToken, phoneFromJsonUrl };
