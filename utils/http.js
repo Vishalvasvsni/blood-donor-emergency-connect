@@ -1,5 +1,5 @@
 // fetch() with a hard timeout so a slow third-party service (email/SMS
-// provider, Salesforce) can never leave a user's request hanging.
+// provider) can never leave a user's request hanging.
 async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);

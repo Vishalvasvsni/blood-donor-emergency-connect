@@ -3,7 +3,6 @@ const db = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { compatibleDonorGroupsFor, distanceKm, VALID_GROUPS } = require('../utils/blood');
 const asyncHandler = require('../utils/asyncHandler');
-const salesforce = require('../services/salesforce');
 
 const router = express.Router();
 
@@ -43,22 +42,13 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
     ]
   );
 
-  const created = await db.get('SELECT * FROM emergency_requests WHERE id = ?', [info.lastInsertRowid]);
-
-  // Best-effort sync to Salesforce as a Case, linked to the poster's Contact
-  // if they have one. Never lets a Salesforce problem fail the request post.
-  if (salesforce.SF_ENABLED) {
-    try {
-      const poster = await db.get('SELECT salesforce_contact_id FROM donors WHERE id = ?', [req.donorId]);
-      const caseId = await salesforce.createCase(created, poster ? poster.salesforce_contact_id : null);
-      if (caseId) {
-        await db.run('UPDATE emergency_requests SET salesforce_case_id = ? WHERE id = ?', [caseId, created.id]);
-        created.salesforce_case_id = caseId;
-      }
-    } catch (err) {
-      console.error('Salesforce case sync failed:', err.message);
-    }
-  }
+  const created = await db.get(
+    `SELECT id, patient_name, blood_group, units_needed, hospital_name, city, state,
+            latitude, longitude, contact_name, contact_phone, urgency, message,
+            status, posted_by, created_at
+     FROM emergency_requests WHERE id = ?`,
+    [info.lastInsertRowid]
+  );
 
   // Find matching compatible & active donors nearby to suggest to the requester
   await db.releaseExpiredCooldowns();
@@ -87,7 +77,11 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const { status = 'open', blood_group, city } = req.query;
   // Requests posted by a blocked account are hidden from the board.
   let rows = await db.all(
-    `SELECT r.* FROM emergency_requests r
+    `SELECT r.id, r.patient_name, r.blood_group, r.units_needed, r.hospital_name,
+            r.city, r.state, r.latitude, r.longitude, r.contact_name,
+            r.contact_phone, r.urgency, r.message, r.status, r.posted_by,
+            r.created_at
+     FROM emergency_requests r
      LEFT JOIN donors d ON d.id = r.posted_by
      WHERE d.is_blocked IS NULL OR d.is_blocked = 0
      ORDER BY r.created_at DESC`
@@ -125,14 +119,6 @@ router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   }
 
   await db.run('UPDATE emergency_requests SET status = ? WHERE id = ?', [status, req.params.id]);
-
-  if (salesforce.SF_ENABLED && existing.salesforce_case_id) {
-    try {
-      await salesforce.updateCaseStatus(existing.salesforce_case_id, status);
-    } catch (err) {
-      console.error('Salesforce case status sync failed:', err.message);
-    }
-  }
 
   res.json({ message: 'Status updated.' });
 }));

@@ -96,7 +96,6 @@ async function initDb() {
         is_blocked      INTEGER NOT NULL DEFAULT 0,
         blocked_at      TEXT,
         blocked_reason  TEXT,
-        salesforce_contact_id TEXT,
         password_changed_at INTEGER,
         created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
     );
@@ -117,7 +116,6 @@ async function initDb() {
         message         TEXT,
         status          TEXT    NOT NULL DEFAULT 'open' CHECK(status IN ('open','fulfilled','expired')),
         posted_by       INTEGER REFERENCES donors(id) ON DELETE SET NULL,
-        salesforce_case_id TEXT,
         created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -168,7 +166,6 @@ async function initDb() {
   const donorMigrations = {
     role: "TEXT NOT NULL DEFAULT 'donor'",
     is_admin: 'INTEGER NOT NULL DEFAULT 0',
-    salesforce_contact_id: 'TEXT',
     phone_norm: 'TEXT',
     has_sugar: 'INTEGER',
     has_bp: 'INTEGER',
@@ -190,9 +187,6 @@ async function initDb() {
   const requestColumns = (await all('PRAGMA table_info(emergency_requests)')).map((c) => c.name);
   if (!requestColumns.includes('posted_by')) {
     await client.execute('ALTER TABLE emergency_requests ADD COLUMN posted_by INTEGER REFERENCES donors(id) ON DELETE SET NULL');
-  }
-  if (!requestColumns.includes('salesforce_case_id')) {
-    await client.execute('ALTER TABLE emergency_requests ADD COLUMN salesforce_case_id TEXT');
   }
 
   // Backfill the normalised phone number for accounts created before it existed.

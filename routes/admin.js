@@ -2,7 +2,6 @@ const express = require('express');
 const db = require('../config/db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
-const salesforce = require('../services/salesforce');
 const blocklist = require('../services/blocklist');
 
 const router = express.Router();
@@ -127,47 +126,6 @@ router.delete('/blocked/:id', requireAuth, requireAdmin, asyncHandler(async (req
     await db.run('UPDATE donors SET is_blocked = 0, blocked_at = NULL, blocked_reason = NULL WHERE id = ?', [entry.donor_id]);
   }
   res.json({ message: 'Removed from the block list.' });
-}));
-
-
-// GET /api/admin/salesforce-status — quick way to verify the Salesforce
-// connection is configured correctly, without needing to register a test
-// user. Shows whether credentials are set and whether authentication
-// actually succeeds against your org right now.
-router.get('/salesforce-status', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  if (!salesforce.SF_ENABLED) {
-    return res.json({ configured: false, message: 'Salesforce environment variables are not set.' });
-  }
-  try {
-    const auth = await salesforce.getAuth();
-    res.json({ configured: true, connected: true, instanceUrl: auth.instanceUrl });
-  } catch (err) {
-    res.json({ configured: true, connected: false, error: err.message });
-  }
-}));
-
-// POST /api/admin/salesforce-resync — manually (re)sync every existing user
-// to Salesforce. Useful right after connecting Salesforce for the first
-// time, so accounts created earlier aren't left out.
-router.post('/salesforce-resync', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  if (!salesforce.SF_ENABLED) {
-    return res.status(400).json({ error: 'Salesforce is not configured.' });
-  }
-  const users = await db.all('SELECT * FROM donors');
-  let synced = 0;
-  const errors = [];
-  for (const user of users) {
-    try {
-      const contactId = await salesforce.upsertContact(user);
-      if (contactId && contactId !== user.salesforce_contact_id) {
-        await db.run('UPDATE donors SET salesforce_contact_id = ? WHERE id = ?', [contactId, user.id]);
-      }
-      synced++;
-    } catch (err) {
-      errors.push({ userId: user.id, error: err.message });
-    }
-  }
-  res.json({ total: users.length, synced, errors });
 }));
 
 module.exports = router;

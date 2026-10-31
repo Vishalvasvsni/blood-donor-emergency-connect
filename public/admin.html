@@ -23,16 +23,6 @@
     <div class="stat-card"><div class="num" id="sBlocked">—</div><div class="label">Blocked</div></div>
   </div>
 
-  <div class="card" id="sfCard" style="margin-bottom:24px;">
-    <h3 style="margin-top:0;">Salesforce Integration</h3>
-    <div id="sfStatus" style="font-size:0.9rem; color:var(--muted);">Checking connection…</div>
-    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-secondary btn-sm" id="sfCheckBtn" type="button">Check Connection</button>
-      <button class="btn btn-secondary btn-sm" id="sfResyncBtn" type="button">Resync All Users Now</button>
-    </div>
-    <div id="sfResyncResult" style="margin-top:10px; font-size:0.85rem;"></div>
-  </div>
-
   <div class="card" style="margin-bottom:24px;">
     <h3 style="margin-top:0;">Blocked emails &amp; mobile numbers</h3>
     <p style="font-size:0.82rem; color:var(--muted); margin-top:-6px;">These can't log in or register again. Deleting a blocked account does not lift the block.</p>
@@ -250,37 +240,6 @@
   document.getElementById('roleFilter').addEventListener('change', applyFilters);
   document.getElementById('searchBox').addEventListener('input', applyFilters);
 
-  async function checkSalesforceStatus() {
-    const el = document.getElementById('sfStatus');
-    el.textContent = 'Checking connection…';
-    try {
-      const s = await api('/admin/salesforce-status', { auth: true });
-      if (!s.configured) {
-        el.innerHTML = '⚪ Not configured — set SALESFORCE_CLIENT_ID, SALESFORCE_CLIENT_SECRET, SALESFORCE_USERNAME, and SALESFORCE_PASSWORD to enable syncing.';
-      } else if (s.connected) {
-        el.innerHTML = `🟢 Connected to <strong>${s.instanceUrl}</strong> — new registrations and requests are syncing automatically.`;
-      } else {
-        el.innerHTML = `🔴 Configured but connection failed: ${s.error}`;
-      }
-    } catch (err) {
-      el.textContent = `Could not check status: ${err.message}`;
-    }
-  }
-
-  document.getElementById('sfCheckBtn').addEventListener('click', checkSalesforceStatus);
-
-  document.getElementById('sfResyncBtn').addEventListener('click', async () => {
-    const resultEl = document.getElementById('sfResyncResult');
-    resultEl.textContent = 'Resyncing all users to Salesforce…';
-    try {
-      const r = await api('/admin/salesforce-resync', { method: 'POST', auth: true });
-      resultEl.textContent = `Synced ${r.synced} of ${r.total} users.` + (r.errors.length ? ` ${r.errors.length} failed — check server logs for details.` : '');
-    } catch (err) {
-      resultEl.textContent = `Resync failed: ${err.message}`;
-    }
-  });
-
-  checkSalesforceStatus();
   loadSummary();
   loadUsers();
   loadBlocked();

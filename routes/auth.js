@@ -6,7 +6,6 @@ const { JWT_SECRET, BLOCKED_MESSAGE, signSession, sessionStillValid } = require(
 const { VALID_GROUPS } = require('../utils/blood');
 const { phoneKey, isValidPhone, parseYesNo, ownView } = require('../utils/donor');
 const asyncHandler = require('../utils/asyncHandler');
-const salesforce = require('../services/salesforce');
 const otp = require('../services/otp');
 const firebase = require('../services/firebase');
 const phoneemail = require('../services/phoneemail');
@@ -18,23 +17,6 @@ const router = express.Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONTACT_BLOCKED_MESSAGE =
   'This email or mobile number has been blocked by the administrator and cannot be used to register.';
-
-// Syncs a donor/seeker to Salesforce as a Contact. Deliberately swallows any
-// Salesforce error — a CRM outage should never stop someone from
-// registering or logging into the actual app. Updates the donor row (and
-// the in-memory object) with the Salesforce Contact Id on success.
-async function syncContactToSalesforce(donor) {
-  if (!salesforce.SF_ENABLED) return;
-  try {
-    const contactId = await salesforce.upsertContact(donor);
-    if (contactId && contactId !== donor.salesforce_contact_id) {
-      await db.run('UPDATE donors SET salesforce_contact_id = ? WHERE id = ?', [contactId, donor.id]);
-      donor.salesforce_contact_id = contactId;
-    }
-  } catch (err) {
-    console.error('Salesforce contact sync failed:', err.message);
-  }
-}
 
 // Checks ADMIN_EMAIL on every register/login (not just server startup) so
 // promotion is instant and doesn't depend on a restart. ADMIN_EMAIL can hold
@@ -397,10 +379,9 @@ router.post('/register', asyncHandler(async (req, res) => {
       accountRole === 'donor' ? 1 : 0,
     ]
   );
-
   const donor = await db.get('SELECT * FROM donors WHERE id = ?', [info.lastInsertRowid]);
   await promoteIfAdminEmail(donor);
-  await syncContactToSalesforce(donor);
+  await promoteIfAdminEmail(donor);
   const token = signSession(donor);
 
   res.status(201).json({ token, donor: ownView(donor) });
@@ -421,9 +402,6 @@ router.post('/login', asyncHandler(async (req, res) => {
     return res.status(403).json({ error: BLOCKED_MESSAGE, blocked: true });
   }
   await promoteIfAdminEmail(donor);
-  // Only backfill accounts that predate Salesforce being configured, or that
-  // failed to sync at register time — avoids an API call on every login.
-  if (!donor.salesforce_contact_id) await syncContactToSalesforce(donor);
   await db.releaseExpiredCooldowns();
   const fresh = await db.get('SELECT * FROM donors WHERE id = ?', [donor.id]);
   fresh.is_admin = donor.is_admin;
